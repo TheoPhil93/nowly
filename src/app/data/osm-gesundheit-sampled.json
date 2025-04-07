@@ -1,0 +1,327 @@
+[
+  {
+    "id": 693318667,
+    "name": "swiss smile",
+    "lngLat": [
+      8.5399903,
+      47.3767441
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Bahnhofstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 2434379960,
+    "name": "Medbase Apotheke Oberi",
+    "lngLat": [
+      8.7589667,
+      47.5098663
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Römerstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 4421187955,
+    "name": "Kleintierpraxis Freihof",
+    "lngLat": [
+      8.591584,
+      47.3049497
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Bahnhofstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 9483006228,
+    "name": "Dentanova",
+    "lngLat": [
+      8.5462274,
+      47.3787233
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 613704525,
+    "name": "Apotheke Schafroth",
+    "lngLat": [
+      8.4863203,
+      47.3879571
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Badenerstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 5837045904,
+    "name": "Rike",
+    "lngLat": [
+      8.686936,
+      47.4291342
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 6424133494,
+    "name": "Physio Zentrum",
+    "lngLat": [
+      8.5967997,
+      47.4100532
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Richtiarkade",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 861782890,
+    "name": "Benu",
+    "lngLat": [
+      8.5389653,
+      47.2889907
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Vordere Grundstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 2317012355,
+    "name": "Apotheke Im Zentrum",
+    "lngLat": [
+      8.6151564,
+      47.2795549
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 432629009,
+    "name": "Pill Apotheke Sihltal",
+    "lngLat": [
+      8.5246397,
+      47.3125693
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Bahnhofplatz",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 5028197930,
+    "name": "zahnarztzentrum.ch Oerlikon",
+    "lngLat": [
+      8.5449668,
+      47.4097009
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Edisonstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 656616207,
+    "name": "Paracelsus-Apotheke",
+    "lngLat": [
+      8.5276523,
+      47.3793647
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Langstrasse",
+    "city": "Zürich",
+    "highlighted": true
+  },
+  {
+    "id": 2837570170,
+    "name": "Zahnteam Wetzikon AG",
+    "lngLat": [
+      8.7921291,
+      47.3200691
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Zürcherstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 11435628074,
+    "name": "Kineo",
+    "lngLat": [
+      8.5287234,
+      47.3933446
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 9527150223,
+    "name": "Tierklinik Dennler AG",
+    "lngLat": [
+      8.4482583,
+      47.2769201
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 4985488548,
+    "name": "Zahnarztpraxis Dr. Molnar AG",
+    "lngLat": [
+      8.7711865,
+      47.2516692
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Poststrasse",
+    "city": "Zürich",
+    "highlighted": true
+  },
+  {
+    "id": 4046629389,
+    "name": "Dr. S. Girard",
+    "lngLat": [
+      8.7484914,
+      47.502265
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Frauenfelderstrasse",
+    "city": "Zürich",
+    "highlighted": true
+  },
+  {
+    "id": 12196827628,
+    "name": "Physiotherapie Kornhaus",
+    "lngLat": [
+      8.5361147,
+      47.3904314
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Kornhausstrasse",
+    "city": "Zürich",
+    "highlighted": true
+  },
+  {
+    "id": 5078190897,
+    "name": "Zahnarztpraxis Binz",
+    "lngLat": [
+      8.5175372,
+      47.3612115
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Uetlibergstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 313053471,
+    "name": "Apotheke Utogrund",
+    "lngLat": [
+      8.4946389,
+      47.3791065
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Albisriederstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 9009987972,
+    "name": "Müller - Kieferorthopädie",
+    "lngLat": [
+      8.802215,
+      47.3272103
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Bachtelstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 639146393,
+    "name": "Amavita Schwamendingen",
+    "lngLat": [
+      8.5729473,
+      47.404526
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "Winterthurerstrasse",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 7730881068,
+    "name": "von Reding",
+    "lngLat": [
+      8.852964,
+      47.2598775
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 7055154597,
+    "name": "Physiotherapie Hilde Berkelmans",
+    "lngLat": [
+      8.5402026,
+      47.390464
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": false
+  },
+  {
+    "id": 6819358203,
+    "name": "Zahnarzt Am Bahnhof Niederhasli",
+    "lngLat": [
+      8.487806,
+      47.478833
+    ],
+    "type": "Arzt",
+    "subType": "",
+    "address": "",
+    "city": "Zürich",
+    "highlighted": true
+  }
+]

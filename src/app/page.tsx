@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import type { Slot } from './components/Map';
 import osmFriseure from './data/osm-friseure.json';
+import gesundheitSampled from './data/osm-gesundheit-sampled.json';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
@@ -13,19 +14,41 @@ const cities = [
   { value: 'Wien', label: 'Wien' },
 ];
 
-const categories = ['Arzt', 'Friseur', 'Massage', 'Gastro'];
+const categories = ['Alle', 'Arzt', 'Friseur', 'Massage', 'Gastro'];
 
-// 1. Friseure aus OSM importieren
-const friseurSlots: Slot[] = osmFriseure.map((entry) => ({
+// Utils: Shuffle + Pick
+function shuffleArray<T>(array: T[]): T[] {
+  return array.sort(() => Math.random() - 0.5);
+}
+function pickSample<T>(array: T[], count: number): T[] {
+  return shuffleArray(array).slice(0, count);
+}
+
+// Friseure: 25 zufällige, 5 hervorgehoben
+const sampledFriseure = pickSample(osmFriseure, 25).map((entry, index) => ({
   id: entry.id,
   lngLat: [entry.lon, entry.lat] as [number, number],
   name: entry.name,
   type: 'Friseur',
   city: entry.city || 'Zürich',
+  subType: entry.subType || '',
+  address: entry.address || '',
+  highlighted: index < 5, // die ersten 5 markieren
 }));
 
-// 2. Hier kannst du später andere Kategorien ergänzen
-const allSlots: Slot[] = [...friseurSlots];
+// Gesundheit: 25 zufällige, 5 davon hervorgehoben
+const gesundheitSlots: Slot[] = gesundheitSampled.map((item) => ({
+  id: item.id,
+  name: item.name,
+  lngLat: item.lngLat as [number, number],
+  type: 'Arzt',
+  city: item.city || 'Zürich',
+  subType: item.subType || '',
+  address: item.address || '',
+  highlighted: item.highlighted || false,
+}));
+
+const allSlots: Slot[] = [...sampledFriseure, ...gesundheitSlots];
 
 export default function Home() {
   const [selectedCity, setSelectedCity] = useState('Zürich');
@@ -42,10 +65,9 @@ export default function Home() {
     setSelectedSlotId(id);
   }, []);
 
-  // 3. Filter nach Stadt & Kategorie
   useEffect(() => {
     let result = allSlots.filter((s) => s.city === selectedCity);
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== 'Alle') {
       result = result.filter((s) => s.type === selectedCategory);
     }
     setFilteredSlots(result);
@@ -75,7 +97,7 @@ export default function Home() {
 
       {/* Headline & Filter */}
       <section className="text-center px-6 py-8">
-        <h2 className="text-4xl font-bold text-gray-900 mb-6">Book what’s free now</h2>
+        <h2 className="text-7xl font-bold text-gray-900 mb-6">Book what’s free now</h2>
         <div className="flex justify-center flex-wrap gap-3">
           {categories.map((cat) => (
             <button
@@ -95,7 +117,6 @@ export default function Home() {
 
       {/* Map + Cards */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pb-12">
-        {/* Map Box */}
         <div className="h-[500px] rounded-xl overflow-hidden shadow-md relative">
           <Map
             city={selectedCity}
@@ -105,7 +126,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Slot Cards */}
         <div className="h-[500px] flex flex-col justify-start rounded-xl bg-white shadow-md p-4 gap-2 overflow-y-auto">
           {filteredSlots.length === 0 ? (
             <p className="text-gray-500 text-sm">Keine Einträge gefunden.</p>
@@ -114,16 +134,18 @@ export default function Home() {
               <div
                 key={slot.id}
                 className={`border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center bg-white shadow-sm ${
-                  selectedSlotId === slot.id ? 'ring-2 ring-blue-500' : ''
+                  selectedSlotId === slot.id ? 'ring-2 ring-gray-700' : ''
                 }`}
               >
                 <div>
                   <h3 className="font-semibold text-base">{slot.name}</h3>
-                  <p className="text-xs text-gray-500">{slot.type}</p>
+                  <p className="text-xs text-gray-500">
+                    {slot.subType ? `${slot.subType} – ` : ''}{slot.type}
+                  </p>
                 </div>
                 <div className="text-right">
                   <button
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                    className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-900"
                     onClick={() => handleSlotSelect(slot.id)}
                   >
                     Auf Karte zeigen

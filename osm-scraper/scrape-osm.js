@@ -2,11 +2,15 @@
 import fetch from 'node-fetch';
 import fs from 'fs';
 
+// Overpass Query: alle Kategorien in Zürich
 const query = `
 [out:json][timeout:25];
 area["name"="Zürich"]->.searchArea;
 (
-  node["shop"="hairdresser"](area.searchArea);
+  node["healthcare"="dentist"](area.searchArea);
+  node["amenity"="pharmacy"](area.searchArea);
+  node["healthcare"="physiotherapist"](area.searchArea);
+  node["amenity"="veterinary"](area.searchArea);
 );
 out body;
 >;
@@ -24,20 +28,29 @@ async function run() {
 
   const results = data.elements
     .filter(el => el.tags && el.tags.name)
-    .map(el => ({
-      id: el.id,
-      name: el.tags.name,
-      lat: el.lat,
-      lon: el.lon,
-      type: 'Friseur',
-      address: el.tags['addr:street'] || '',
-      city: 'Zürich',
-      phone: el.tags['phone'] || '',
-      website: el.tags['website'] || ''
-    }));
+    .map(el => {
+      let type = 'Sonstiges';
 
-  fs.writeFileSync('osm-friseure.json', JSON.stringify(results, null, 2));
-  console.log(`✅ ${results.length} Einträge gespeichert in osm-friseure.json`);
+      if (el.tags.healthcare === 'dentist') type = 'Zahnarzt';
+      else if (el.tags.amenity === 'pharmacy') type = 'Apotheke';
+      else if (el.tags.healthcare === 'physiotherapist') type = 'Physiotherapie';
+      else if (el.tags.amenity === 'veterinary') type = 'Tierarzt';
+
+      return {
+        id: el.id,
+        name: el.tags.name,
+        lat: el.lat,
+        lon: el.lon,
+        type,
+        address: el.tags['addr:street'] || '',
+        city: 'Zürich',
+        phone: el.tags['phone'] || '',
+        website: el.tags['website'] || ''
+      };
+    });
+
+    fs.writeFileSync('osm-gesundheit.json', JSON.stringify(results, null, 2));
+  console.log(`✅ ${results.length} Einträge gespeichert in osm-gesundheit.json`);
 }
 
-run();
+run(); 

@@ -40,14 +40,64 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   z-index: 10;
 }
+/* Animierte Puls-Effekte */
 .custom-marker {
-  position: absolute;
   width: 14px;
   height: 14px;
   border-radius: 9999px;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transform: translate(-50%, -50%);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.custom-marker:hover {
+  transform: scale(1.5); /* Vergrößert den Marker */
+}
+
+/* Info-Overlay mit den Details */
+.custom-marker-info {
+  position: absolute;
+  top: 120%; /* Position über dem Marker */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 12px; /* Angepasstes Padding */
+  border-radius: 8px; /* Leicht abgerundete Ecken */
+  background-color: rgba(255, 255, 255, 0.9); /* Heller, leicht transparenter Hintergrund */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15); /* Leichter Schatten */
+  display: none;
+  white-space: normal;
+  font-family: sans-serif; /* Standard-Schriftart */
+  z-index: 1000; /* Stellen Sie sicher, dass es über anderen Elementen liegt */
+  min-width: 150px; /* Minimale Breite, um nicht zu schmal zu sein */
+  max-width: 250px; /* Maximale Breite, um nicht zu breit zu werden */
+}
+
+.custom-marker-info h4 {
+  font-size: 14px; /* Angepasste Größe für den Titel */
+  font-weight: bold;
+  color: #333; /* Dunklerer Titel */
+  margin-bottom: 4px; /* Etwas Abstand zum nächsten Element */
+}
+
+.custom-marker-info p {
+  font-size: 12px; /* Angepasste Größe für die anderen Texte */
+  color: #555; /* Dunklerer Text */
+  margin: 2px 0; /* Etwas vertikaler Abstand */
+}
+
+.custom-marker-info .symbol-container {
+  display: flex;
+  align-items: center; /* Vertikal zentrieren */
+}
+
+.custom-marker-info .symbol {
+  width: 12px;  /* Angepasste Symbolgröße */
+  height: 12px;
+  border-radius: 50%; /* Macht es rund */
+  background-color: purple; /* Lila Hintergrund (wie im Screenshot) */
+  margin-right: 4px; /* Abstand zum Text */
+  display: inline-block; /* Damit margin funktioniert */
 }
 
 .custom-marker.pulse::before {
@@ -63,8 +113,6 @@ body {
   animation: pulseEffect 1.8s infinite ease-in-out;
   z-index: -1;
 }
-
-
 
 @keyframes pulseEffect {
   0% {
@@ -82,11 +130,15 @@ body {
 }
 @keyframes ping {
   0% {
-    transform: scale(1);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.8;
   }
-  75%, 100% {
-    transform: scale(2);
+  70% {
+    transform: translate(-50%, -50%) scale(5); /* größerer Radius */
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
     opacity: 0;
   }
 }
