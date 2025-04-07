@@ -1,0 +1,62 @@
+[
+  {
+    "id": 101,
+    "name": "King - Johnston",
+    "type": "Arzt",
+    "city": "Z\u00fcrich",
+    "lngLat": [
+      8.533267,
+      47.378952
+    ]
+  },
+  {
+    "id": 102,
+    "name": "Rodriguez, Streich and Schuster",
+    "type": "Friseur",
+    "city": "Z\u00fcrich",
+    "lngLat": [
+      8.540627,
+      47.370702
+    ]
+  },
+  {
+    "id": 103,
+    "name": "Willms and Sons",
+    "type": "Massage",
+    "city": "Berlin",
+    "lngLat": [
+      13.409583,
+      52.522716
+    ]
+  },
+  {
+    "id": 104,
+    "name": "Lind - Greenholt",
+    "type": "Gastro",
+    "city": "Berlin",
+    "lngLat": [
+      13.406154,
+      52.521949
+    ]
+  },
+  {
+    "id": 105,
+    "name": "Prohaska LLC",
+    "type": "Arzt",
+    "city": "Wien",
+    "lngLat": [
+      16.380167,
+      48.207793
+    ]
+  },
+  {
+    "id": 106,
+    "name": "Caf\u00e9 Central",
+    "type": "Gastro",
+    "city": "Wien",
+    "lngLat": [
+      16.372914,
+      48.206827
+    ]
+  }
+]
