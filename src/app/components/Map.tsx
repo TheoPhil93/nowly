@@ -95,31 +95,31 @@ export default function Map({
       }
 
       // Info-Box bei Hover
-      const infoEl = document.createElement('div');
-      infoEl.className = 'custom-marker-info';
+        const infoEl = document.createElement('div');
+        infoEl.className = 'custom-marker-info';
 
-      // Text für die Info-Box
-      const titleEl = document.createElement('h4');
-      titleEl.textContent = slot.name + " " + (slot.frequency || ''); // Kombinierter Titel
-      infoEl.appendChild(titleEl);
+        // Text für die Info-Box
+        const titleEl = document.createElement('h4');
+        titleEl.textContent = slot.name + " " + (slot.frequency || ''); // Kombinierter Titel
+        infoEl.appendChild(titleEl);
 
-      const symbolContainer = document.createElement('div');
-      symbolContainer.className = "symbol-container";
+        const symbolContainer = document.createElement('div');
+        symbolContainer.className = "symbol-container";
 
-      const symbolEl = document.createElement('span');
-      symbolEl.className = 'symbol';
-      symbolContainer.appendChild(symbolEl);
+        const symbolEl = document.createElement('span');
+        symbolEl.className = 'symbol';
+        symbolContainer.appendChild(symbolEl);
 
-      const countryEl = document.createElement('p');
-      countryEl.textContent = slot.country || '';
-      symbolContainer.appendChild(countryEl); // Füge Land zum Container hinzu
-      infoEl.appendChild(symbolContainer);
+        const countryEl = document.createElement('p');
+        countryEl.textContent = slot.country || '';
+        symbolContainer.appendChild(countryEl); // Füge Land zum Container hinzu
+        infoEl.appendChild(symbolContainer);
 
-      const detailsEl = document.createElement('p');
-      detailsEl.textContent = (slot.format || '') + " " + (slot.bitrate || '') + " " + (slot.rating || '');
-      infoEl.appendChild(detailsEl);
+        const detailsEl = document.createElement('p');
+        detailsEl.textContent = (slot.format || '') + " " + (slot.bitrate || '') + " " + (slot.rating || '');
+        infoEl.appendChild(detailsEl);
 
-      markerEl.appendChild(infoEl);
+        markerEl.appendChild(infoEl);
 
       // Text für die Info-Box
       infoEl.innerHTML = `

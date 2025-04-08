@@ -10,7 +10,25 @@ html {
   --background: #ffffff;
   --foreground: #171717;
 }
+h2 {
+  font-family: 'Satoshi', sans-serif; /* Deine Schriftart */
+  font-size: 4.50rem; /* Tailwind: Textgröße */
+  font-weight: 700;
+  color: #2d3748; /* Dunkleres Grau */
+}
 
+label {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+input {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 1rem;
+  color: #1a202c;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -142,4 +160,222 @@ body {
     opacity: 0;
   }
 }
+/* Pulsierende Animation für das 'o' */
+.pulse-o {
+  display: inline-block;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4); /* Größer machen für den Puls-Effekt */
+    opacity: 0.6; /* Halb durchsichtig */
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.booking-form-overlay {
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.9),   /* Schwarz, fast undurchsichtig (unten) */
+      rgba(0, 0, 0, 0.1)    /* Schwarz, sehr transparent (oben) */
+  );
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 2rem;
+  overflow-y: auto; /* Für lange Formulare auf kleinen Bildschirmen */
+}
 
+.booking-form-container {
+  background-color: #f9fafb;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 480px;
+}
+
+.booking-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.booking-form-header h2 {
+  font-family: 'Satoshi', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.booking-form-header button {
+  color: #718096;
+  transition: color 0.15s ease-in-out;
+}
+
+.booking-form-header button:hover {
+  color: #4a5568;
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem; /* Abstand zwischen den Formularfeldern */
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+  font-family: 'Satoshi', sans-serif;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  color: #1a202c;
+  font-family: 'Satoshi', sans-serif;
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  box-sizing: border-box; /* Wichtig, damit padding die Breite nicht beeinflusst */
+}
+
+.form-group input:focus {
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.3);
+}
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.secondary-button {
+  background-color: #edf2f7;
+  color: #4a5568;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  font-family: 'Satoshi', sans-serif;
+  outline: none; /* Entfernt den Standard-Fokus-Rahmen */
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background-color: #d1d5db;
+}
+
+.primary-button {
+  background-color: #4c51ef;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease-in-out;
+  font-family: 'Satoshi', sans-serif;
+  outline: none;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background-color: #434190;
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-in-out;
+}
+
+@keyframes fade-in {
+  from {
+      opacity: 0;
+      transform: translateY(10px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+/* Styling für die Listeneinträge (wie Buttons) */
+.slot-card {
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.4rem 1.25rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex; /* Flexbox aktiviert */
+  align-items: center; /* Vertikal zentrieren */
+  justify-content: space-between; /* Verteilt den Platz zwischen den Elementen */
+}
+
+/* Hover-Effekt (angepasst für Button-Look) */
+.slot-card:hover {
+  background-color: #f3f4f6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Styling für den Text innerhalb der Karte */
+.slot-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a202c;
+  margin: 0; /* Kein Margin, Flexbox steuert den Abstand */
+  width: auto; /* Kein fester Breitenwert */
+  height: auto;
+}
+
+.slot-card p {
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin: 0; /* Kein Margin, Flexbox steuert den Abstand */
+  width: auto; /* Kein fester Breitenwert */
+  height: auto;
+}
+
+/* Button-Styling */
+.slot-card .map-button {
+  background-color: #4c51ef;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  width: auto; /* Kein fester Breitenwert */
+  height: auto;
+}
+
+.slot-card .map-button:hover {
+  background-color: #434190;
+}
+
+/* Hervorhebung des ausgewählten Slots */
+.slot-card.selected {
+  border-color: #4c51ef;
+  box-shadow: 0 0 0 3px rgba(76, 81, 239, 0.3);
+}
