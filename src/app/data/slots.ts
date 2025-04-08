@@ -1,4 +1,4 @@
-import type { Slot } from '../components/Map';
+import type { Slot } from '../../components/Map';
 
 const demoData: Slot[] = [
   { id: 1000, name: 'King - Johnston', type: 'Arzt', city: 'Zürich', lngLat: [8.533991, 47.371791] },
