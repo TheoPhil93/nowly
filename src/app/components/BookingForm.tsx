@@ -1,23 +1,27 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+'use client';
 
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 
 interface BookingFormProps {
     slotId: number;
+    slotName: string;
+    slotAddress?: string;
     onBookingSuccess: (message: string) => void;
     onClose: () => void;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ slotId, onBookingSuccess, onClose }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ slotId, slotName, slotAddress, onBookingSuccess, onClose }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [date, setDate] = useState('');
     const [time, setTime] = useState('');
-    const formRef = useRef<HTMLFormElement>(null); // Referenz auf das Formular
+   const formRef = useRef<HTMLFormElement>(null);
+   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Hier würdest du deine Buchungslogik implementieren
+    
         const bookingDetails = {
             slotId,
             name,
@@ -26,14 +30,38 @@ const BookingForm: React.FC<BookingFormProps> = ({ slotId, onBookingSuccess, onC
             date,
             time,
         };
-
-        // Simuliere eine erfolgreiche Buchung
-        console.log('Buchungsdetails:', bookingDetails);
-        onBookingSuccess('Buchung erfolgreich!');
-
-        // Optional: Formular zurücksetzen nach erfolgreicher Buchung
-        if (formRef.current) {
-            formRef.current.reset();
+    
+        try {
+            const response = await fetch('/api/book', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingDetails),
+            });
+    
+            const data = await response.json();
+    
+            if (response.ok) {
+                const successInfo = {
+                    slotId,
+                    slotName,
+                    slotAddress,
+                    name,
+                    date,
+                    time,
+                };
+                localStorage.setItem('lastBooking', JSON.stringify(successInfo));
+                
+                setErrorMessage(null);
+                onBookingSuccess('Buchung erfolgreich!');
+                formRef.current?.reset();
+            } else {
+                setErrorMessage(data.error || 'Buchung fehlgeschlagen');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Ein Fehler ist aufgetreten.');
         }
     };
 
@@ -41,13 +69,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ slotId, onBookingSuccess, onC
         onClose();
     }, [onClose]);
 
-    // Fokus auf das erste Eingabefeld beim Anzeigen des Formulars
     useEffect(() => {
         if (formRef.current) {
             const firstInput = formRef.current.querySelector('input');
-            if (firstInput) {
-                firstInput.focus();
-            }
+            firstInput?.focus();
         }
     }, []);
 
@@ -58,7 +83,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ slotId, onBookingSuccess, onC
                     <h2 className="booking-form-title">Buche deinen Termin</h2>
                     <button type="button" className="booking-form-close-button" onClick={handleClose}>
                         <svg className="h-6 w-6 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            <path
+                                fillRule="evenodd"
+                                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                            />
                         </svg>
                     </button>
                 </div>
@@ -87,6 +116,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ slotId, onBookingSuccess, onC
                         <button type="button" className="secondary-button" onClick={handleClose}>Zurück</button>
                         <button type="submit" className="primary-button">Buchen</button>
                     </div>
+                        {errorMessage && (
+                            <p className="text-red-600 text-sm mt-4">{errorMessage}</p>
+                        )}
                 </form>
             </div>
         </div>

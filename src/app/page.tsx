@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import type { Slot } from './components/Map';
@@ -6,6 +7,7 @@ import osmFriseure from './data/osm-friseure.json';
 import gesundheitSampled from './data/osm-gesundheit-sampled.json';
 import osmGastro from './data/osm-gastro.json';
 import BookingForm from './components/BookingForm';
+
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
@@ -43,7 +45,7 @@ const gesundheitSlots: Slot[] = gesundheitSampled.map((item) => ({
     id: item.id,
     name: item.name,
     lngLat: item.lngLat as [number, number],
-    type: 'Arzt',
+    type: item.type,
     city: item.city || 'Zürich',
     subType: item.subType || '',
     address: item.address || '',
@@ -52,18 +54,22 @@ const gesundheitSlots: Slot[] = gesundheitSampled.map((item) => ({
 
 // Gastro: 25 zufällige, 5 davon hervorgehoben
 const gastroSlots: Slot[] = pickSample(osmGastro, 25).map((item, index) => ({
-    id: item.id,
-    name: item.name,
-    lngLat: [item.lon, item.lat] as [number, number],
-    type: 'Gastro',
-    city: 'Zürich',
-    address: item.address || '',
-    highlighted: index < 5,
-}));
+      id: item.id, // Korrekt: 'item' wird verwendet
+      lngLat: [item.lon, item.lat] as [number, number],
+      name: item.name,
+      type: 'Gastro',
+      city: 'Zürich',
+      address: item.address || '',
+      highlighted: index < 5,
+  }));
 
 const allSlots: Slot[] = [...sampledFriseure, ...gesundheitSlots, ...gastroSlots];
 
+import { useRouter } from 'next/navigation'; // Importiere useRouter
+
 export default function Home() {
+    const router = useRouter(); // Initialisiere useRouter
+
     const [selectedCity, setSelectedCity] = useState('Zürich');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [filteredSlots, setFilteredSlots] = useState<Slot[]>([]);
@@ -71,6 +77,24 @@ export default function Home() {
     const [showBookingForm, setShowBookingForm] = useState(false);
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
     const listRef = useRef<HTMLDivElement>(null);
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [bookingSuccessMessage, setBookingSuccessMessage] = useState<string | null>(null);
+
+
+    const fetchBookings = useCallback(async () => {
+        try {
+            const res = await fetch('/api/bookings');
+            const data = await res.json();
+            setBookings(data.bookings || []);
+        } catch (err) {
+            console.error('Fehler beim Laden der Buchungen:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchBookings();
+    }, [fetchBookings]);
+    
 
     const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedCity(e.target.value);
@@ -95,13 +119,25 @@ export default function Home() {
     }, []);
 
     const handleBookingSuccess = useCallback((message: string) => {
-        alert(message);
-        setShowBookingForm(false);
-    }, []);
+        router.push('/success');
+
+    
+        // Automatisch zur Startansicht zurück nach 3 Sekunden
+        setTimeout(() => {
+            setBookingSuccessMessage(null);
+            setSelectedSlotId(null);
+            setSelectedSlot(null);
+        }, 3000);
+    }, [fetchBookings]);
+    
 
     const handleCloseBookingForm = useCallback(() => {
         setShowBookingForm(false);
     }, []);
+
+    const handleLoginClick = () => {
+        router.push('/login'); // Navigiere zur Login-Seite
+    };
 
     useEffect(() => {
         let result = allSlots.filter((s) => s.city === selectedCity);
@@ -110,6 +146,22 @@ export default function Home() {
         }
         setFilteredSlots(result);
     }, [selectedCity, selectedCategory]);
+
+    useEffect(() => {
+        const fetchBookings = async () => {
+            try {
+                const res = await fetch('/api/bookings');
+                const data = await res.json();
+                setBookings(data.bookings || []);
+            } catch (err) {
+                console.error('Fehler beim Laden der Buchungen:', err);
+            }
+        };
+    
+        fetchBookings();
+    }, []);
+    
+    
 
     return (
         <div className="min-h-screen bg-white text-gray-900">
@@ -129,13 +181,15 @@ export default function Home() {
                 </select>
                 <div className="flex gap-4">
                     <button className="hover:opacity-70">🔍</button>
-                    <button className="hover:opacity-70">👤</button>
+                    <button className="hover:opacity-70" onClick={handleLoginClick}>Login</button>
                 </div>
             </header>
 
             {/* Headline & Filter */}
             <section className="text-center px-6 py-8">
-                <h2 className="text-10xl font-bold text-gray-900 mb-6">Book what’s free now</h2>
+                <h2 className="text-7xl font-bold text-gray-900 mb-6">
+                    Book what’s free now
+                </h2>
                 <div className="flex justify-center flex-wrap gap-3">
                     {categories.map((cat) => (
                         <button
@@ -171,24 +225,25 @@ export default function Home() {
                         filteredSlots.map((slot) => (
                             <div
                                 key={slot.id}
-                                className="slot-card" /* Verwende die neue CSS-Klasse */
-                                onClick={() => handleZoomToSlot(slot.id)} /* Klickhandler für die gesamte Karte */
+                                className={`border border-gray-200 rounded-md px-4 py-3 flex justify-between items-center bg-white shadow-sm ${
+                                    selectedSlotId === slot.id ? 'ring-2 ring-gray-700' : ''
+                                }`}
                             >
                                 <div>
-                                    <h3 className="slot-title">{slot.name}</h3>
-                                    <p className="slot-subtitle">
+                                    <h3 className="font-semibold text-base">{slot.name}</h3>
+                                    <p className="text-xs text-gray-500">
                                         {slot.subType ? `${slot.subType} – ` : ''}{slot.type}
                                     </p>
                                 </div>
                                 <div className="text-right">
                                     <button
-                                        className="map-button" /* Behalte die ursprüngliche CSS-Klasse */
+                                        className="px-3 py-1 bg-gray-700 text-white rounded text-sm hover:bg-gray-900"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             handleSlotSelect(slot.id);
                                         }}
                                     >
-                                        Buchen 
+                                        Buchen
                                     </button>
                                 </div>
                             </div>
@@ -197,10 +252,30 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* Buchungsübersicht */}
+            <section className="px-6 pb-12">
+                <h3 className="text-xl font-semibold mb-2">Alle Buchungen</h3>
+                {bookings.length === 0 ? (
+                    <p className="text-gray-500 text-sm">Noch keine Buchungen vorhanden.</p>
+                ) : (
+                    <ul className="space-y-2">
+                        {bookings.map((booking, index) => (
+                            <li key={index} className="border border-gray-200 rounded-md px-4 py-3 bg-white shadow-sm text-sm">
+                                <strong>Slot ID:</strong> {booking.slotId} <br />
+                                <strong>Name:</strong> {booking.name} <br />
+                                <strong>Datum:</strong> {booking.date}, <strong>Uhrzeit:</strong> {booking.time}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
             {/* Buchungsformular (unter der Karte) */}
             {showBookingForm && selectedSlot && (
                 <BookingForm
                     slotId={selectedSlot.id}
+                    slotName={selectedSlot.name}
+                    slotAddress={selectedSlot.address}
                     onBookingSuccess={handleBookingSuccess}
                     onClose={handleCloseBookingForm}
                 />
