@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../utils/db';
+import connectDB from '@/utils/db';
 import mongoose from 'mongoose';
 
 // 1. Schema definieren (nur beim ersten Import nötig)

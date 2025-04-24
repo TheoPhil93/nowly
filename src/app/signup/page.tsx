@@ -1,80 +1,108 @@
 'use client';
-import React, { useState } from 'react';
+
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const SignupPage = () => {
+export default function SignupPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [role, setRole] = useState<'user' | 'provider'>('user');
     const [error, setError] = useState('');
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
 
-        if (password !== confirmPassword) {
-            setError('Passwörter stimmen nicht überein.');
+        const res = await fetch('/api/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, password, role }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            setError(data.message || 'Registrierung fehlgeschlagen.');
             return;
         }
 
-        try {
-            const response = await fetch('/api/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name, email, password }),
-            });
+        // Speichere User-Daten lokal
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('authToken', data.token); // falls du später mit Token arbeitest
 
-            const data = await response.json();
-
-            if (response.ok) {
-                // Erfolgreiche Registrierung
-                console.log(data.message);
-                router.push('/login'); // Weiterleitung zum Login
-            } else {
-                // Fehler bei der Registrierung
-                setError(data.message || 'Registrierung fehlgeschlagen.');
-            }
-        } catch (err) {
-            console.error(err);
-            setError('Es ist ein Fehler aufgetreten. Bitte versuche es später noch einmal.');
-        }
+        // Weiterleitung zur Startseite
+        router.push('/');
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="bg-white p-8 rounded-md shadow-md w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Registrieren</h2>
-                {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
-                        <input type="text" id="name" className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white px-4">
+            <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-200">
+                <h2 className="text-3xl font-bold text-center mb-6 text-gray-900">Jetzt registrieren</h2>
+                {error && <p className="text-red-600 text-sm mb-4 text-center">{error}</p>}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <input
+                        type="text"
+                        placeholder="Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="w-full border px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    />
+                    <input
+                        type="email"
+                        placeholder="E-Mail-Adresse"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full border px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Passwort"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full border px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-300 focus:outline-none"
+                    />
+                    <div className="flex flex-col gap-2 text-sm text-gray-700">
+                        <label className="font-medium">Ich bin:</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="user"
+                                    checked={role === 'user'}
+                                    onChange={() => setRole('user')}
+                                />
+                                Nutzer:in
+                            </label>
+                            <label className="flex items-center gap-2">
+                                <input
+                                    type="radio"
+                                    name="role"
+                                    value="provider"
+                                    checked={role === 'provider'}
+                                    onChange={() => setRole('provider')}
+                                />
+                                Dienstleister:in
+                            </label>
+                        </div>
                     </div>
-                    <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-                        <input type="email" id="email" className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Passwort</label>
-                        <input type="password" id="password" className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Passwort bestätigen</label>
-                        <input type="password" id="confirmPassword" className="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                    </div>
-                    <div className="flex justify-end space-x-4">
-                        <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Registrieren</button>
-                    </div>
+                    <button
+                        type="submit"
+                        className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition text-sm font-medium"
+                    >
+                        Registrieren
+                    </button>
                 </form>
-                <div className="mt-4 text-center">
-                    <p>Hast du bereits ein Konto? <a href="/login" className="text-indigo-600 hover:underline">Anmelden</a></p>
-                </div>
+                <p className="text-sm text-center mt-4 text-gray-600">
+                    Bereits ein Konto?{' '}
+                    <a href="/login" className="text-blue-600 hover:underline">Jetzt anmelden</a>
+                </p>
             </div>
         </div>
     );
-};
-
-export default SignupPage;
+}

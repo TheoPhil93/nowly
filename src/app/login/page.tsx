@@ -30,7 +30,7 @@ export default function LoginPage() {
         localStorage.setItem('user', JSON.stringify(data.user));
 
         // 👉 Weiterleitung nach erfolgreichem Login
-        router.push('/partner/slots');
+        router.push('/');
     };
 
     return (
@@ -61,6 +61,12 @@ export default function LoginPage() {
                     >
                         Login
                     </button>
+                    <p className="text-sm text-center mt-4 text-gray-600">
+                        Noch kein Konto?{' '}
+                        <a href="/signup" className="text-blue-600 hover:underline">
+                            Jetzt registrieren
+                        </a>
+                    </p>
                 </form>
             </div>
         </div>

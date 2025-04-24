@@ -1,32 +1,35 @@
-import connectDB from '../../utils/db'; // Make sure this imports your DB connection
-import User from '../../models/User';  // Ensure the model path is correct
+// src/app/api/signup/route.ts
+import connectDB from '../../../utils/TS_db'; // Wieder einkommentiert
+import User from '../../models/User';
 import bcrypt from 'bcryptjs';
+import { NextRequest, NextResponse } from 'next/server'; // NextResponse hinzugefügt
 
 export async function POST(req: NextRequest) {
     try {
-        const { name, email, password } = await req.json();
+        await connectDB(); // Verbindung aufbauen
 
-        // Validate the fields
+        const { name, email, password, role } = await req.json();
+
         if (!name || !email || !password) {
-            return new Response(JSON.stringify({ message: 'Alle Felder sind erforderlich.' }), { status: 400 });
+            // Verwende NextResponse für konsistente API-Antworten
+            return NextResponse.json({ message: 'Alle Felder sind erforderlich.' }, { status: 400 });
         }
 
-        // Check if the email already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return new Response(JSON.stringify({ message: 'E-Mail bereits registriert.' }), { status: 400 });
+            return NextResponse.json({ message: 'E-Mail bereits registriert.' }, { status: 400 });
         }
 
-        // Encrypt password
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Create user in the database
-        const newUser = new User({ name, email, password: hashedPassword });
+        const newUser = new User({ name, email, password: hashedPassword, role }); // 'role' wird hier verwendet, falls übergeben
         await newUser.save();
 
-        return new Response(JSON.stringify({ message: 'Benutzer erfolgreich registriert.' }), { status: 200 });
+        return NextResponse.json({ message: 'Benutzer erfolgreich registriert.' }, { status: 201 }); // Status 201 für "Created"
 
-    } catch (error) {
-        return new Response(JSON.stringify({ message: 'Fehler bei der Registrierung' }), { status: 500 });
+    } catch (error) { // <-- Variable heisst wieder 'error'
+        // Logge den tatsächlichen Fehler für Debugging-Zwecke
+        console.error('[SIGNUP ERROR]', error);
+        // Gib eine generische Fehlermeldung an den Client zurück
+        return NextResponse.json({ message: 'Fehler bei der Registrierung auf dem Server.' }, { status: 500 });
     }
 }

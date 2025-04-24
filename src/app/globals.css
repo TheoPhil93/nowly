@@ -12,7 +12,6 @@ html {
 }
 h2 {
   font-family: 'Satoshi', sans-serif; /* Deine Schriftart */
-  font-size: 4.50rem; /* Tailwind: Textgröße */
   font-weight: 700;
   color: #2d3748; /* Dunkleres Grau */
 }
@@ -71,6 +70,12 @@ body {
 
 .custom-marker:hover {
   transform: scale(1.5); /* Vergrößert den Marker */
+}
+.mapboxgl-ctrl-attrib.mapboxgl-compact {
+  min-height: auto !important;
+  padding: 0 5px !important;
+  margin: 5px !important;
+  background-color: rgba(255, 255, 255, 0.6) !important;
 }
 
 /* Info-Overlay mit den Details */

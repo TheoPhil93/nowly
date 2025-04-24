@@ -1,17 +1,18 @@
+// src/app/api/slots/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../utils/db';
+import connectDB from '../../../utils/TS_db'; // Pfad prüfen
 import mongoose from 'mongoose';
 
 // Slot-Schema definieren
 const SlotSchema = new mongoose.Schema(
   {
     name: String,
-    address: String,
+    address: String, // Wird gespeichert
     type: String,
     date: String,
     time: String,
     duration: Number,
-    lngLat: [Number], // [lng, lat]
+    lngLat: { type: [Number], index: '2dsphere' }, // Korrekter Typ für Geo-Koordinaten
     createdAt: { type: Date, default: Date.now },
   },
   { collection: 'slots' }
@@ -19,9 +20,10 @@ const SlotSchema = new mongoose.Schema(
 
 const Slot = mongoose.models.Slot || mongoose.model('Slot', SlotSchema);
 
-// Geocoding (hier nur Platzhalter – ersetzt durch echte Koordinaten oder API-Anbindung)
+// Geocoding Platzhalter
 async function fakeGeocode(address: string): Promise<[number, number]> {
-  // TODO: OSM, Mapbox oder Google Geocoding einbauen
+  console.log(`[GEOCODE DUMMY] Geocoding für: ${address}`); // Zeigt, dass Adresse verwendet wird
+  // TODO: Echten Geocoder implementieren!
   return [8.5417, 47.3769]; // Default: Zürich
 }
 
@@ -29,17 +31,20 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
+    // Stelle sicher, dass 'address' hier extrahiert wird
     const { name, address, type, date, time, duration } = body;
 
     if (!name || !address || !type || !date || !time || !duration) {
       return NextResponse.json({ error: 'Fehlende Felder' }, { status: 400 });
     }
 
-    const lngLat = await fakeGeocode(address); // später durch echten Geocoder ersetzen
+    // 'address' wird hier für Geocoding verwendet
+    const lngLat = await fakeGeocode(address);
 
+    // 'address' wird hier zum Speichern verwendet
     await Slot.create({
       name,
-      address,
+      address, // Sicherstellen, dass es hier steht
       type,
       date,
       time,
@@ -50,6 +55,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Slot gespeichert' }, { status: 201 });
   } catch (error) {
     console.error('[POST /api/slots] Fehler:', error);
-    return NextResponse.json({ error: 'Serverfehler' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
+    return NextResponse.json({ error: 'Serverfehler', details: errorMessage }, { status: 500 });
   }
 }
+
+// Füge hier ggf. GET etc. hinzu
