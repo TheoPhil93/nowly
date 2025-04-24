@@ -237,16 +237,74 @@ export default function Home() {
     console.log(`[DEBUG] Search: City=${finalCity}, Category=${finalCategory}`);
   }, [resetSelectionAndViews]);
 
-  const handleAuthClick = useCallback(() => {
-    let targetPath = '/profil';
-    if (!user) {
-      targetPath = '/login';
-    } else if (user.role === 'provider') {
-      targetPath = '/dashboard/slots';
+  useEffect(() => {
+    console.log("[DEBUG] Checking auth status...");
+    if (typeof window !== 'undefined') {
+      try {
+        let currentUser = null;
+        const token = localStorage.getItem('authToken');
+        const storedUser = localStorage.getItem('user');
+  
+        console.log("[DEBUG] Auth check - Token exists:", !!token);
+        console.log("[DEBUG] Auth check - User data exists:", !!storedUser);
+        
+        // IMPORTANT CHANGE: Check for user data even if token is missing
+        if (storedUser && storedUser !== 'undefined') {
+          try {
+            currentUser = JSON.parse(storedUser);
+            console.log("[DEBUG] User loaded from localStorage:", currentUser);
+          } catch (e) {
+            console.error('Error parsing localStorage user:', e);
+            localStorage.removeItem('user');
+          }
+        }
+        
+        // Set the user state - will be null if no valid user data was found
+        setUser(currentUser);
+      } catch (err) {
+        console.error('[ERROR] Auth status check failed:', err);
+      }
     }
-    console.log(`[DEBUG] Auth button clicked. User role: "${user?.role}", Target Path: "${targetPath}"`);
-    router.push(targetPath);
+  }, [pathname]);
+
+
+  const handleAuthClick = useCallback(() => {
+    // Check if user is logged in
+    if (!user) {
+      // Not logged in - go to login page
+      console.log(`[DEBUG] User not logged in, redirecting to login`);
+      router.push('/login');
+      return;
+    }
+    
+    // Check user role to determine destination
+    if (user.role === 'provider') {
+      // Provider users go to dashboard
+      console.log(`[DEBUG] Provider user, redirecting to dashboard`);
+      router.push('/dashboard/slots');
+    } else {
+      // Regular users - use the CORRECT German path to the profile page
+      console.log(`[DEBUG] Regular user, redirecting to profile (German spelling)`);
+      router.push('/profil');  // This is the correct path!
+    }
   }, [router, user]);
+
+
+  const testLoginMock = () => {
+    const mockUser = {
+      id: 'user-123',
+      name: 'Test User',
+      email: 'test@example.com',
+      role: 'user'
+    };
+    
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    localStorage.setItem('authToken', 'mock-token-123');
+    
+    // Refresh the user state
+    setUser(mockUser);
+    console.log('[DEBUG] Test login completed. User should now be logged in.');
+  };
 
   const handleCategoryChange = useCallback((cat: string) => {
     resetSelectionAndViews();
@@ -350,32 +408,6 @@ export default function Home() {
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
-
-  // Auth Status Effect
-  useEffect(() => {
-    console.log("[DEBUG] Checking auth status...");
-    if (typeof window !== 'undefined') {
-      try {
-        let currentUser: User | null = null;
-        const token = localStorage.getItem('authToken');
-        const storedUser = localStorage.getItem('user');
-
-        if (token && storedUser && storedUser !== 'undefined') {
-          try {
-            currentUser = JSON.parse(storedUser) as User;
-            console.log("[DEBUG] User loaded from localStorage:", currentUser);
-          } catch (e) {
-            console.error('Error parsing localStorage user:', e);
-            localStorage.removeItem('user');
-            localStorage.removeItem('authToken');
-          }
-        }
-        setUser(currentUser);
-      } catch (err) {
-        console.error('[ERROR] Auth status check failed:', err);
-      }
-    }
-  }, [pathname]);
 
   // Selected Slot Validation
   useEffect(() => {
