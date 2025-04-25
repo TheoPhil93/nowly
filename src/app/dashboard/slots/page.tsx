@@ -48,8 +48,16 @@ interface Analytics {
   topServices: { name: string; count: number }[];
 }
 
+interface User {
+  id: string | number; // Add other properties your user object has
+  name: string;
+  email?: string;
+  role: 'provider' | 'customer' | 'admin'; // Be specific about possible roles
+  // Add any other properties retrieved from localStorage/API
+}
+
 export default function ProviderDashboard() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<User | null>(null);
   const [slots, setSlots] = useState<Slot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
@@ -61,7 +69,6 @@ export default function ProviderDashboard() {
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in and is a provider
     const storedUser = localStorage.getItem('user');
     if (!storedUser) {
       router.push('/login');
@@ -69,16 +76,30 @@ export default function ProviderDashboard() {
     }
 
     try {
-      const userData = JSON.parse(storedUser);
-      if (userData.role !== 'provider') {
-        router.push('/profil');
-        return;
+      // When parsing, you can assert the type if confident,
+      // but it's safer to validate the structure.
+      const userData: unknown = JSON.parse(storedUser);
+
+      // Basic type guard (you might want a more robust validation)
+      if (typeof userData === 'object' && userData !== null && 'role' in userData && 'name' in userData) {
+         // Now TypeScript knows userData might be a User object based on the checks
+        if ((userData as User).role !== 'provider') {
+          router.push('/profil');
+          return;
+        }
+        // Set the state - TypeScript now knows userData fits the User shape
+        setUser(userData as User);
+        fetchProviderData();
+      } else {
+          // Handle cases where localStorage data is invalid
+          console.error('Invalid user data structure in localStorage');
+          router.push('/login');
+          return; // Stop execution if data is invalid
       }
-      setUser(userData);
-      // Simulate fetching provider data
-      fetchProviderData();
+
     } catch (e) {
       console.error('Error parsing user data:', e);
+      localStorage.removeItem('user'); // Clear invalid data
       router.push('/login');
     } finally {
       setIsLoading(false);
@@ -229,7 +250,7 @@ export default function ProviderDashboard() {
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return 'P';
+    if (!name) return 'P'; // Default for provider if name somehow missing
     return name
       .split(' ')
       .map(part => part[0])
@@ -774,7 +795,7 @@ export default function ProviderDashboard() {
               <div className="flex space-x-4">
                 <select
                   value={selectedTimeRange}
-                  onChange={(e) => setSelectedTimeRange(e.target.value as any)}
+                  onChange={(e) => setSelectedTimeRange(e.target.value as 'today' | 'week' | 'month' | 'year')}
                   className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
                 >
                   <option value="today">Heute</option>

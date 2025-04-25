@@ -20,7 +20,6 @@ const BookingSchema = new mongoose.Schema(
 // Bestehendes Modell wiederverwenden (Hot Reload vermeiden)
 const Booking = mongoose.models.Booking || mongoose.model('Booking', BookingSchema);
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_req: NextRequest) { 
   try {
     await connectDB();

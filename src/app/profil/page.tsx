@@ -59,7 +59,7 @@ export default function ProfilePage() {
       setUser(userData);
       setEditedUser(userData);
       // Simulate fetching bookings
-      fetchBookings(userData.id);
+      fetchBookings();
     } catch (e) {
       console.error('Error parsing user data:', e);
       router.push('/login');
@@ -85,7 +85,7 @@ export default function ProfilePage() {
     };
   }, [showUserMenu]);
 
-  const fetchBookings = async (userId: string) => {
+  const fetchBookings = async () => {
     // Simulated bookings data - replace with actual API call
     const mockBookings: Booking[] = [
       {
@@ -149,14 +149,14 @@ export default function ProfilePage() {
         setError('Name und E-Mail sind erforderlich.');
         return;
       }
-
+  
       // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(editedUser.email)) {
         setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
         return;
       }
-
+  
       // Simulate API call to update user profile
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -168,7 +168,7 @@ export default function ProfilePage() {
       
       // Hide success message after 3 seconds
       setTimeout(() => setShowSuccessMessage(false), 3000);
-    } catch (err) {
+    } catch (_err) {  // Changed from catch (err)
       setError('Fehler beim Speichern des Profils. Bitte versuchen Sie es erneut.');
     }
   };
