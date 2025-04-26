@@ -32,6 +32,7 @@ const categories = [
   'Friseur'
 ];
 
+
 // --- Component Imports ---
 // Dynamic import for Map component to avoid SSR issues
 const Map = dynamic(() => import('./components/Map'), {
@@ -77,11 +78,17 @@ interface ErrorBoundaryProps {
     onClose: () => void;            // Callback function
   }
 
-  interface BookingFormProps { // Make sure this definition exists
+  interface BookingFormProps {
+    slotId?: string | number; 
     slotName: string;
     slotAddress: string;
     onBookingSuccess: (message: string) => void;
     onClose: () => void;
+  }
+
+  interface User {
+    name?: string;
+    role?: string;
   }
 
 // --- Error Boundary Component ---
@@ -145,8 +152,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+interface LoadingStateProps {
+    text?: string;
+    size?: 'small' | 'default' | 'large';
+  }
+
 // --- Loading State Component ---
-const LoadingState = ({ text = 'Loading...', size = 'default' }) => {
+const LoadingState: React.FC<LoadingStateProps> = ({ text = 'Loading...', size = 'default' }) => {
   const getSpinnerSize = () => {
     switch (size) {
       case 'small': return 'h-4 w-4';
@@ -304,572 +316,532 @@ const SlotDetailView: React.FC<SlotDetailViewProps> = ({ slot, onGoToBooking, on
   );
 };
 
-// --- Booking Form Component ---
 const BookingForm: React.FC<BookingFormProps> = ({ slotName, slotAddress, onBookingSuccess, onClose }) => {
-    const [selectedDate, setSelectedDate] = useState<string>(''); // Explicit type is good practice
+    const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedTime, setSelectedTime] = useState<string>('');
-    const [availableTimes, setAvailableTimes] = useState<string[]>([]); // Needs explicit type for array
+    const [availableTimes, setAvailableTimes] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [step, setStep] = useState<number>(1);
 
-  const [formValues, setFormValues] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    notes: ''
-  });
-
-  useEffect(() => {
-    const bookingTimeSlots = [
-      '9:00', '9:30', '10:00', '10:30', '11:00', '11:30',
-      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
-      '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
-    ];
-    
-    if (!selectedDate) {
-      setAvailableTimes([]);
-      return;
-    }
-  
-    setTimeout(() => {
-      const filteredTimes = bookingTimeSlots.filter(() => Math.random() > 0.3);
-      setAvailableTimes(filteredTimes);
-    }, 300);
-  }, [selectedDate]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target; // Accessing e.target is now type-safe
-    setFormValues(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const resetForm = () => {
-    setFormValues({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      notes: ''
+    const [formValues, setFormValues] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        notes: ''
     });
-  };
 
-  const _today = new Date().toISOString().split('T')[0];
+    const bookingTimeSlots = useMemo(() => [
+        '9:00', '9:30', '10:00', '10:30', '11:00', '11:30',
+        '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+        '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'
+    ], []);
 
-  const generateDates = () => {
-    const dates = [];
-    const now = new Date();
-
-    for (let i = 0; i < 14; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() + i);
-      const formattedDate = date.toISOString().split('T')[0];
-      const dayName = new Intl.DateTimeFormat('de-DE', { weekday: 'short' }).format(date);
-      const displayDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}, ${dayName}`;
-
-      dates.push({
-        value: formattedDate,
-        display: displayDate
-      });
-    }
-
-    return dates;
-  };
-
-  const availableDates = generateDates();
-
-  // useEffect mit korrigierter Dependency-Liste
-  useEffect(() => {
-    if (!selectedDate) {
-      setAvailableTimes([]);
-      return;
-    }
-
-    // setTimeout bleibt unverändert, verwendet bookingTimeSlots aus dem äußeren Geltungsbereich
-    const timer = setTimeout(() => {
-      // Annahme: bookingTimeSlots ist als const oder useMemo im Komponentenumfang definiert
-      const filteredTimes = bookingTimeSlots.filter(() => Math.random() > 0.3);
-      setAvailableTimes(filteredTimes);
-    }, 300);
-
-    // Cleanup-Funktion für den Timeout
-    return () => clearTimeout(timer);
-
-  // Nur von selectedDate abhängig
-  }, [selectedDate]); // <-- bookingTimeSlots entfernt
-
-  // handleDateSelect mit Typ für 'date'
-  const handleDateSelect = (date: string) => {
-    setSelectedDate(date);
-    setSelectedTime('');
-  };
-
-  // handleTimeSelect mit Typ für 'time'
-  const handleTimeSelect = (time: string) => {
-    setSelectedTime(time);
-  };
-
-  const handleNextStep = () => {
-    if (step === 1 && (!selectedDate || !selectedTime)) {
-      setError('Bitte wählen Sie Datum und Uhrzeit aus.');
-      return;
-    }
-    setError('');
-    setStep(2);
-  };
-
-  const handlePrevStep = () => {
-    setStep(1);
-  };
-
-  // handleSubmit mit Typ für das Event-Objekt 'e'
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Type-safe
-
-    if (!formValues.firstName || !formValues.lastName || !formValues.email) {
-      setError('Bitte füllen Sie alle Pflichtfelder aus.');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formValues.email)) {
-      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
-      return;
-    }
-
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-        const displayDate = new Date(selectedDate).toLocaleDateString('de-DE', { /* options */ });
-        onBookingSuccess(`Termin am ${displayDate} um ${selectedTime} Uhr erfolgreich gebucht.`); // Callback is type-checked
-        resetForm();
-    } catch (err) {
-        console.error('Booking error:', err);
-        // Use 'const' since the variable is not reassigned in the current code
-        const errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
-        if (err instanceof Error) {
-            // If you later uncomment the line below to use the specific error message,
-            // you would need to change 'const' back to 'let'.
-            // errorMessage = err.message;
+    useEffect(() => {
+        if (!selectedDate) {
+            setAvailableTimes([]);
+            return;
         }
-        setError(errorMessage);
-      } finally {
-        setIsSubmitting(false);
-      }
 
-  return (
-    <>
-      <div className="flex flex-col h-full">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Back to details"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </button>
-          <h2 className="text-lg font-semibold">Termin buchen</h2>
-          <div className="w-7"></div>
-        </div>
-      </div>
+        setTimeout(() => {
+            const filteredTimes = bookingTimeSlots.filter(() => Math.random() > 0.3);
+            setAvailableTimes(filteredTimes);
+        }, 300);
+    }, [selectedDate, bookingTimeSlots]);
 
-      <div className="mb-6">
-        <h3 className="font-semibold text-gray-900">{slotName}</h3>
-        <p className="text-sm text-gray-500">{slotAddress}</p>
-      </div>
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
 
-      <div className="flex items-center mb-6">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          step === 1 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'
-        }`}>1</div>
-        <div className="flex-grow h-0.5 mx-2 bg-gray-200"></div>
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
-        }`}>2</div>
-      </div>
+    const resetForm = () => {
+        setFormValues({
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            notes: ''
+        });
+    };
 
-      {step === 1 && (
-        <div className="flex-grow flex flex-col">
-          <div className="mb-4">
-            <h4 className="font-medium text-gray-900 mb-2">Datum auswählen</h4>
-            <div className="grid grid-cols-3 gap-2">
-              {availableDates.slice(0, 6).map((date) => (
-                <button
-                  key={date.value}
-                  onClick={() => handleDateSelect(date.value)}
-                  className={`py-2 px-1 rounded-md text-sm ${
-                    selectedDate === date.value
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                  }`}
-                >
-                  {date.display}
-                </button>
-              ))}
-            </div>
-          </div>
+    const _today = new Date().toISOString().split('T')[0];
 
-          {selectedDate && (
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Uhrzeit auswählen</h4>
-              {availableTimes.length === 0 ? (
-                <div className="flex items-center justify-center h-24 bg-gray-50 rounded-md">
-                  <div className="animate-pulse flex space-x-4">
-                    <div className="flex-1 space-y-4 py-1">
-                      <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 bg-gray-300 rounded w-5/6 mx-auto"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-4 gap-2">
-                  {availableTimes.map((time) => (
+    const generateDates = () => {
+        const dates = [];
+        const now = new Date();
+
+        for (let i = 0; i < 14; i++) {
+            const date = new Date(now);
+            date.setDate(date.getDate() + i);
+            const formattedDate = date.toISOString().split('T')[0];
+            const dayName = new Intl.DateTimeFormat('de-DE', { weekday: 'short' }).format(date);
+            const displayDate = `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}, ${dayName}`;
+
+            dates.push({
+                value: formattedDate,
+                display: displayDate
+            });
+        }
+
+        return dates;
+    };
+
+    const availableDates = generateDates();
+
+    useEffect(() => {
+        if (!selectedDate) {
+            setAvailableTimes([]);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            const filteredTimes = bookingTimeSlots.filter(() => Math.random() > 0.3);
+            setAvailableTimes(filteredTimes);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [selectedDate, bookingTimeSlots]);
+
+    const handleDateSelect = (date: string) => {
+        setSelectedDate(date);
+        setSelectedTime('');
+    };
+
+    const handleTimeSelect = (time: string) => {
+        setSelectedTime(time);
+    };
+
+    const handleNextStep = () => {
+        if (step === 1 && (!selectedDate || !selectedTime)) {
+            setError('Bitte wählen Sie Datum und Uhrzeit aus.');
+            return;
+        }
+        setError('');
+        setStep(2);
+    };
+
+    const handlePrevStep = () => {
+        setStep(1);
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (!formValues.firstName || !formValues.lastName || !formValues.email) {
+            setError('Bitte füllen Sie alle Pflichtfelder aus.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formValues.email)) {
+            setError('Bitte geben Sie eine gültige E-Mail-Adresse ein.');
+            return;
+        }
+
+        setError('');
+        setIsSubmitting(true);
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const displayDate = new Date(selectedDate).toLocaleDateString('de-DE', {});
+            onBookingSuccess(`Termin am ${displayDate} um ${selectedTime} Uhr erfolgreich gebucht.`);
+            resetForm();
+        } catch (err) {
+            console.error('Booking error:', err);
+            const errorMessage = 'Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.';
+            setError(errorMessage);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between mb-4">
                     <button
-                      key={time}
-                      onClick={() => handleTimeSelect(time)}
-                      className={`py-2 px-3 rounded-md text-sm ${
-                        selectedTime === time
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                      }`}
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        aria-label="Back to details"
                     >
-                      {time}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
                     </button>
-                  ))}
+                    <h2 className="text-lg font-semibold">Termin buchen</h2>
+                    <div className="w-7"></div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-auto pt-4">
-            <button
-              onClick={handleNextStep}
-              disabled={!selectedDate || !selectedTime}
-              className={`w-full py-3 font-medium rounded-md transition-colors duration-200 flex items-center justify-center ${
-                selectedDate && selectedTime
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                  : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              Weiter
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {step === 2 && (
-        <form onSubmit={handleSubmit} className="flex-grow flex flex-col">
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Vorname *
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formValues.firstName}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nachname *
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formValues.lastName}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  required
-                />
-              </div>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                E-Mail *
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formValues.email}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                required
-              />
+            <div className="mb-6">
+                <h3 className="font-semibold text-gray-900">{slotName}</h3>
+                <p className="text-sm text-gray-500">{slotAddress}</p>
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                Telefon
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formValues.phone}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              />
+            <div className="flex items-center mb-6">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    step === 1 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-600'
+                }`}>1</div>
+                <div className="flex-grow h-0.5 mx-2 bg-gray-200"></div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                }`}>2</div>
             </div>
 
-            <div>
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                Anmerkungen
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                value={formValues.notes}
-                onChange={handleChange}
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              ></textarea>
-            </div>
-          </div>
+            {step === 1 && (
+                <div className="flex-grow flex flex-col">
+                    <div className="mb-4">
+                        <h4 className="font-medium text-gray-900 mb-2">Datum auswählen</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                            {availableDates.slice(0, 6).map((date) => (
+                                <button
+                                    key={date.value}
+                                    onClick={() => handleDateSelect(date.value)}
+                                    className={`py-2 px-1 rounded-md text-sm ${
+                                        selectedDate === date.value
+                                            ? 'bg-blue-600 text-white'
+                                            : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    {date.display}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <h4 className="font-medium text-gray-900 mb-2">Terminbestätigung</h4>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Datum:</span>
-              <span className="font-medium">
-                {new Date(selectedDate).toLocaleDateString('de-DE', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric'
-                })}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-600">Uhrzeit:</span>
-              <span className="font-medium">{selectedTime} Uhr</span>
-            </div>
-          </div>
+                    {selectedDate && (
+                        <div>
+                            <h4 className="font-medium text-gray-900 mb-2">Uhrzeit auswählen</h4>
+                            {availableTimes.length === 0 ? (
+                                <div className="flex items-center justify-center h-24 bg-gray-50 rounded-md">
+                                    <div className="animate-pulse flex space-x-4">
+                                        <div className="flex-1 space-y-4 py-1">
+                                            <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                                            <div className="space-y-2">
+                                                <div className="h-4 bg-gray-300 rounded w-5/6 mx-auto"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-4 gap-2">
+                                    {availableTimes.map((time) => (
+                                        <button
+                                            key={time}
+                                            onClick={() => handleTimeSelect(time)}
+                                            className={`py-2 px-3 rounded-md text-sm ${
+                                                selectedTime === time
+                                                    ? 'bg-blue-600 text-white'
+                                                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {time}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+                    {error && (
+                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                            {error}
+                        </div>
+                    )}
 
-          <div className="mt-auto pt-4 grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handlePrevStep}
-              className="py-3 border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors duration-200"
-            >
-              Zurück
-            </button>
+                    <div className="mt-auto pt-4">
+                        <button
+                            onClick={handleNextStep}
+                            disabled={!selectedDate || !selectedTime}
+                            className={`w-full py-3 font-medium rounded-md transition-colors duration-200 flex items-center justify-center ${
+                                selectedDate && selectedTime
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            }`}
+                        >
+                            Weiter
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`py-3 font-medium rounded-md transition-colors duration-200 flex items-center justify-center ${
-                isSubmitting
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Verarbeitung...
-                </>
-              ) : (
-                'Termin buchen'
-              )}
-            </button>
-          </div>
-        </form>
-      )}
-    </>
-  );
+            {step === 2 && (
+                <form onSubmit={handleSubmit} className="flex-grow flex flex-col">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Vorname *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="firstName"
+                                    name="firstName"
+                                    value={formValues.firstName}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Nachname *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="lastName"
+                                    name="lastName"
+                                    value={formValues.lastName}
+                                    onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                                E-Mail *
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                value={formValues.email}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                                Telefon
+                            </label>
+                            <input
+                                type="tel"
+                                id="phone"
+                                name="phone"
+                                value={formValues.phone}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            />
+                        </div>
+
+                        <div>
+                            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+                                Anmerkungen
+                            </label>
+                            <textarea
+                                id="notes"
+                                name="notes"
+                                value={formValues.notes}
+                                onChange={handleChange}
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-gray-50 rounded-md">
+                        <h4 className="font-medium text-gray-900 mb-2">Terminbestätigung</h4>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Datum:</span>
+                            <span className="font-medium">
+                                {new Date(selectedDate).toLocaleDateString('de-DE', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                })}
+                            </span>
+                        </div>
+                        <div className="flex justify-between text-sm mt-1">
+                            <span className="text-gray-600">Uhrzeit:</span>
+                            <span className="font-medium">{selectedTime} Uhr</span>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <div className="mt-auto pt-4 grid grid-cols-2 gap-3">
+                        <button
+                            type="button"
+                            onClick={handlePrevStep}
+                            className="py-3 border border-gray-300 rounded-md bg-white hover:bg-gray-50 transition-colors duration-200"
+                        >
+                            Zurück
+                        </button>
+
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className={`py-3 font-medium rounded-md transition-colors duration-200 flex items-center justify-center ${
+                                isSubmitting
+                                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <svg
+                                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    Verarbeitung...
+                                </>
+                            ) : (
+                                'Termin buchen'
+                            )}
+                        </button>
+                    </div>
+                </form>
+            )}
+        </>
+    );
 };
 
-// --- Custom hook for debouncing ---
-function useDebounce(value, delay) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 // --- Data Processing Function ---
-function processSlotData() {
-  let fallbackCounter = 0;
-
-  const generateId = (item) => {
-    return item.id !== undefined && item.id !== null ? item.id : `fallback-${fallbackCounter++}`;
-  };
-
-  const mapDataSource = (items, typeFallback, defaultCity) => {
-    if (!Array.isArray(items)) {
-      console.error(`[ERROR] Input for ${typeFallback} is not an array.`);
-      return [];
-    }
-
-    return items.map((item) => ({
-      id: generateId(item),
-      lngLat: (typeof item.lon !== 'undefined' && item.lon !== null &&
-                typeof item.lat !== 'undefined' && item.lat !== null &&
-                !isNaN(Number(item.lon)) && !isNaN(Number(item.lat)))
-        ? [Number(item.lon), Number(item.lat)]
-        : [0, 0],
-      name: item.name || `Unbenannt (${typeFallback})`,
-      type: item.type || typeFallback,
-      city: item.city || defaultCity,
-      subType: item.subType || '',
-      address: item.address || 'Keine Adresse',
-      phone: item.phone || null,
-      website: item.website || null,
-    }));
-  };
-
-  try {
-    const sampledFriseure = mapDataSource(osmFriseure, 'Friseur', 'Zürich');
-    const gesundheitSlots = mapDataSource(osmGesundheit, 'Gesundheit', 'Zürich');
-    const gastroSlots = mapDataSource(osmGastro, 'Gastro', 'Zürich');
-    const allSlots = [...sampledFriseure, ...gesundheitSlots, ...gastroSlots];
-
-    const validSlots = allSlots.filter(slot =>
-      slot.lngLat &&
-      Array.isArray(slot.lngLat) &&
-      slot.lngLat.length === 2 &&
-      typeof slot.lngLat[0] === 'number' &&
-      typeof slot.lngLat[1] === 'number' &&
-      (slot.lngLat[0] !== 0 || slot.lngLat[1] !== 0)
-    );
-
-    console.log(`[DEBUG] Total slots: ${allSlots.length}, Valid slots: ${validSlots.length}`);
-
-    return { allSlots, validSlots };
-  } catch (error) {
-    console.error('[ERROR] Failed to process slots data:', error);
-    return { allSlots: [], validSlots: [] };
-} 
-
-}
-
-// --- Main Component ---
-export default function Home() {
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // --- Data Processing ---
-  const { validSlots } = useMemo(() => {
-    return processSlotData();
-  }, []);
-
-  // --- State Management ---
-  const [selectedCity, setSelectedCity] = useState('Zürich');
-  const [selectedCategory, setSelectedCategory] = useState('Alle');
-  const [searchQuery, setSearchQuery] = useState('');
-  const _debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const [selectedSlotId, setSelectedSlotId] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [rightPanelView, setRightPanelView] = useState('list');
-  const [flyToCoords, setFlyToCoords] = useState(null);
-  const [bookingSuccessMessage, setBookingSuccessMessage] = useState(null);
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [_error, setError] = useState(null);
-  const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showMap, setShowMap] = useState(true);
-
-  // --- Memoized filteredSlots ---
-  const filteredSlots = useMemo(() => {
-    try {
-      if (!selectedCity) return [];
-
-      const cityLower = selectedCity.toLowerCase();
-      const categoryLower = selectedCategory?.toLowerCase();
-
-      // First filter by city
-      const cityFiltered = validSlots.filter(s =>
-        s.city?.toLowerCase() === cityLower
-      );
-
-      // Then apply category filter if needed
-      if (!categoryLower || categoryLower === 'alle') {
-        return cityFiltered;
+function processSlotData(): { allSlots: SlotData[], validSlots: SlotData[] } {
+    let fallbackCounter = 0;
+  
+    const generateId = (item: Record<string, unknown>): string | number => {
+      return item.id !== undefined && item.id !== null ? item.id as string | number : `fallback-${fallbackCounter++}`;
+    };
+  
+    const mapDataSource = (items: Record<string, unknown>[], typeFallback: string, defaultCity: string): SlotData[] => {
+      if (!Array.isArray(items)) {
+        console.error(`[ERROR] Input for ${typeFallback} is not an array.`);
+        return [];
       }
-
-      return cityFiltered.filter(s =>
-        s.type?.toLowerCase() === categoryLower
-      );
-    } catch (err) {
-      console.error('[ERROR] Failed to filter slots:', err);
-      return [];
-    }
-  }, [selectedCity, selectedCategory, validSlots]);
-
-  // --- API Service ---
-  const fetchBookings = useCallback(async () => {
-    setIsLoading(true);
+  
+      return items.map((item) => ({
+        id: generateId(item),
+        lngLat: (typeof item.lon !== 'undefined' && item.lon !== null &&
+                 typeof item.lat !== 'undefined' && item.lat !== null &&
+                 !isNaN(Number(item.lon)) && !isNaN(Number(item.lat)))
+          ? [Number(item.lon), Number(item.lat)]
+          : [0, 0],
+        name: (item.name as string) || `Unbenannt (${typeFallback})`,
+        type: (item.type as string) || typeFallback,
+        city: (item.city as string) || defaultCity,
+        subType: (item.subType as string) || '',
+        address: (item.address as string) || 'Keine Adresse',
+        phone: (item.phone as string | null) || null,
+        website: (item.website as string | null) || null,
+      }));
+    };
+  
     try {
-      // Simulated API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Error fetching bookings:", err);
-      setError("Failed to load bookings");
-      setIsLoading(false);
+      const sampledFriseure = mapDataSource(osmFriseure as Record<string, unknown>[], 'Friseur', 'Zürich');
+      const gesundheitSlots = mapDataSource(osmGesundheit as Record<string, unknown>[], 'Gesundheit', 'Zürich');
+      const gastroSlots = mapDataSource(osmGastro as Record<string, unknown>[], 'Gastro', 'Zürich');
+      const allSlots = [...sampledFriseure, ...gesundheitSlots, ...gastroSlots];
+  
+      const validSlots = allSlots.filter(slot =>
+        slot.lngLat &&
+        Array.isArray(slot.lngLat) &&
+        slot.lngLat.length === 2 &&
+        typeof slot.lngLat[0] === 'number' &&
+        typeof slot.lngLat[1] === 'number' &&
+        (slot.lngLat[0] !== 0 || slot.lngLat[1] !== 0)
+      );
+  
+      console.log(`[DEBUG] Total slots: ${allSlots.length}, Valid slots: ${validSlots.length}`);
+  
+      return { allSlots, validSlots };
+    } catch (error) {
+      console.error('[ERROR] Failed to process slots data:', error);
+      return { allSlots: [], validSlots: [] };
     }
-  }, []);
+}
+  
+  export default function Home() {
+    // Hier kommen die State-Definitionen
+    const [user, setUser] = useState<User | null>(null);
+    const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [selectedCity, setSelectedCity] = useState('Zürich');
+    const [selectedCategory, setSelectedCategory] = useState('Alle');
+    const [showMap, setShowMap] = useState(true);
+    const [rightPanelView, setRightPanelView] = useState<'list' | 'detail' | 'booking'>('list');
+    const [selectedSlotId, setSelectedSlotId] = useState<string | number | null>(null);
+    const [selectedSlot, setSelectedSlot] = useState<SlotData | null>(null);
+    const [flyToCoords, setFlyToCoords] = useState<[number, number] | null>(null);
+    const [bookingSuccessMessage, setBookingSuccessMessage] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [_error, setError] = useState<string | null>(null);
+  
+    const router = useRouter();
+    const pathname = usePathname();
+  
+    // Process Slot Data
+    const { allSlots: _allSlots, validSlots } = useMemo(() => processSlotData(), []);
+  
+    // Filtered slots based on selection
+    const filteredSlots = useMemo(() => {
+      const debouncedQuery = searchQuery.trim().toLowerCase();
+      
+      return validSlots.filter((slot) => {
+        // City filter
+        if (slot.city !== selectedCity) return false;
+        
+        // Category filter
+        if (selectedCategory !== 'Alle' && slot.type !== selectedCategory) return false;
+        
+        // Search query filter
+        if (debouncedQuery) {
+          return (
+            slot.name.toLowerCase().includes(debouncedQuery) ||
+            slot.type.toLowerCase().includes(debouncedQuery) ||
+            (slot.address && slot.address.toLowerCase().includes(debouncedQuery))
+          );
+        }
+        
+        return true;
+      });
+    }, [validSlots, selectedCity, selectedCategory, searchQuery]);
+  
+    // Fetch bookings function
+    const fetchBookings = useCallback(async () => {
+      setIsLoading(true);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsLoading(false);
+      } catch (_err) {
+        console.error("Error fetching bookings:", _err);
+        setError("Failed to load bookings");
+        setIsLoading(false);
+      }
+    }, []);
 
   // --- UI Interaction Handlers ---
   const resetSelectionAndViews = useCallback(() => {
@@ -879,43 +851,43 @@ export default function Home() {
     setFlyToCoords(null);
   }, []);
 
-  const handleSearch = useCallback((query) => {
+  const handleSearch = useCallback((query: string) => {
     if (!query.trim()) return;
-
+  
     resetSelectionAndViews();
-
+  
     const parts = query.trim().toLowerCase().split(/\s+/);
-
+  
     // Find city and category in the query
-    let foundCity = null;
-    let foundCategory = null;
-
+    let foundCity: string | null = null;
+    let foundCategory: string | null = null;
+  
     parts.forEach(part => {
       // Try to match city
       const matchedCity = cities.find(c =>
         c.value.toLowerCase() === part ||
         c.value.toLowerCase().includes(part)
       );
-
+  
       if (matchedCity && !foundCity) {
         foundCity = matchedCity.value;
       }
-
+  
       // Try to match category
       const matchedCategory = categories.find(c =>
         c.toLowerCase() === part ||
         c.toLowerCase().includes(part)
       );
-
+  
       if (matchedCategory && !foundCategory) {
         foundCategory = matchedCategory;
       }
     });
-
+  
     // Set found values or keep defaults
     if (foundCity) setSelectedCity(foundCity);
     if (foundCategory) setSelectedCategory(foundCategory);
-
+  
   }, [resetSelectionAndViews]);
 
   const handleAuthClick = useCallback(() => {
@@ -932,12 +904,12 @@ export default function Home() {
     }
   }, [router, user]);
 
-  const handleCategoryChange = useCallback((cat) => {
+  const handleCategoryChange = useCallback((cat: string) => {
     resetSelectionAndViews();
     setSelectedCategory(prev => prev === cat ? 'Alle' : cat);
   }, [resetSelectionAndViews]);
 
-  const handleShowSlotDetails = useCallback((id) => {
+  const handleShowSlotDetails = useCallback((id: string | number) => {
     try {
       const slot = validSlots.find(s => s.id === id);
       if (!slot) return;
@@ -963,7 +935,7 @@ export default function Home() {
     }
   }, [selectedSlot]);
 
-  const handleGoToBookingFromList = useCallback((id, event) => {
+  const handleGoToBookingFromList = useCallback((id: string | number, event: React.MouseEvent) => {
     try {
       event.stopPropagation();
       const slot = validSlots.find(s => s.id === id);
@@ -994,7 +966,7 @@ export default function Home() {
     resetSelectionAndViews();
   }, [resetSelectionAndViews]);
 
-  const handleBookingSuccess = useCallback((message) => {
+  const handleBookingSuccess = useCallback((message: string) => {
     setBookingSuccessMessage(message);
 
     // Optimistic UI update
@@ -1041,24 +1013,12 @@ export default function Home() {
           }
         }
       } catch (_err) {
-        console.error('[ERROR] Auth status check failed:', err);
+        console.error('[ERROR] Auth status check failed:', _err);
       }
     }
   }, [pathname]);
 
-  // Fetch initial bookings data
-  fetchBookings = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setIsLoading(false);
-    } catch (_err) {  // Added underscore
-      console.error("Error fetching bookings:", _err);
-      setError("Failed to load bookings");
-      setIsLoading(false);
-    }
-  }, []);
-
+  
   // --- JSX for UI subcomponents ---
   
   const SearchBar = () => (
@@ -1117,55 +1077,69 @@ export default function Home() {
     </button>
   );
 
-  const SlotListItem = ({ slot, onSelect, onBookNow }) => (
-    <div
-      className={`border border-gray-200 rounded-lg px-4 py-3 flex justify-between items-center bg-white shadow-sm transition-all duration-150 hover:shadow-md hover:border-gray-300 ${
-        selectedSlotId === slot.id ? 'ring-2 ring-blue-500' : ''
-      }`}
-      onClick={() => onSelect(slot.id)}
-    >
-      <div className="flex-grow mr-4 overflow-hidden">
-        <h3 className="font-semibold text-base truncate">{slot.name}</h3>
-        <div className="flex items-center text-xs text-gray-500 mt-1">
-          {slot.subType && (
-            <span className="inline-block mr-2 px-2 py-0.5 bg-gray-100 rounded-full">{slot.subType}</span>
-          )}
-          <span>{slot.type}</span>
-          {slot.address && (
-            <span className="ml-2 truncate">• {slot.address.split(',')[0]}</span>
-          )}
-        </div>
-      </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onBookNow(slot.id, e);
-        }}
-        className="ml-auto flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded whitespace-nowrap z-10 transition-colors duration-200"
-        aria-label={`Book ${slot.name}`}
-      >
-        Buchen
-      </button>
-    </div>
-  );
+  interface SlotListItemProps {
+    slot: SlotData;
+    onSelect: (id: string | number) => void;
+    onBookNow: (id: string | number, event: React.MouseEvent) => void;
+  }
 
-  const SuccessToast = ({ message }) => (
-    <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-xl z-50 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-      </svg>
-      <span>{message}</span>
-      <button
-        onClick={() => setBookingSuccessMessage(null)}
-        className="ml-3 text-white hover:text-gray-200"
-        aria-label="Close notification"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+  const SlotListItem: React.FC<SlotListItemProps> = ({ slot, onSelect, onBookNow }) => {
+    return (
+      <div
+        className={`border border-gray-200 rounded-lg px-4 py-3 flex justify-between items-center bg-white shadow-sm transition-all duration-150 hover:shadow-md hover:border-gray-300 ${
+          selectedSlotId === slot.id ? 'ring-2 ring-blue-500' : ''
+        }`}
+        onClick={() => onSelect(slot.id)}
+        >
+        <div className="flex-grow mr-4 overflow-hidden">
+            <h3 className="font-semibold text-base truncate">{slot.name}</h3>
+            <div className="flex items-center text-xs text-gray-500 mt-1">
+            {slot.subType && (
+                <span className="inline-block mr-2 px-2 py-0.5 bg-gray-100 rounded-full">{slot.subType}</span>
+            )}
+            <span>{slot.type}</span>
+            {slot.address && (
+                <span className="ml-2 truncate">• {slot.address.split(',')[0]}</span>
+            )}
+            </div>
+        </div>
+        <button
+            onClick={(e) => {
+            e.stopPropagation();
+            onBookNow(slot.id, e);
+            }}
+            className="ml-auto flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded whitespace-nowrap z-10 transition-colors duration-200"
+            aria-label={`Book ${slot.name}`}
+        >
+            Buchen
+        </button>
+        </div>
+    );
+  };
+
+  interface SuccessToastProps {
+    message: string;
+  }
+
+  const SuccessToast: React.FC<SuccessToastProps> = ({ message }) => {
+    return (
+        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-xl z-50 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
-      </button>
-    </div>
-  );
+        <span>{message}</span>
+            <button
+                onClick={() => setBookingSuccessMessage(null)}
+                className="ml-3 text-white hover:text-gray-200"
+                aria-label="Close notification"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            </div>
+    );
+  };
 
   // --- Main JSX Rendering ---
   return (
@@ -1313,14 +1287,16 @@ export default function Home() {
                 {/* Left Column: Map */}
                 <div className={`lg:col-span-3 ${showMap ? 'block' : 'hidden'} lg:block`}>
                   <div className="h-[400px] sm:h-[500px] md:h-[calc(100vh-400px)] min-h-[300px] rounded-xl overflow-hidden shadow-lg relative bg-gray-100">
-                    <Map
-                      city={selectedCity}
-                      slots={filteredSlots}
-                      onSlotSelect={handleShowSlotDetails}
-                      selectedSlotId={selectedSlotId}
-                      flyToCoords={flyToCoords}
-                      onMapMoveEnd={handleMapMoveEnd}
-                    />
+                  <Map
+                    city={selectedCity}
+                    slots={filteredSlots.filter((slot): slot is SlotData & { lngLat: [number, number] } => 
+                        slot.lngLat !== undefined
+                    )}
+                    onSlotSelect={handleShowSlotDetails}
+                    selectedSlotId={selectedSlotId}
+                    flyToCoords={flyToCoords}
+                    onMapMoveEnd={handleMapMoveEnd}
+                  />
                   </div>
                 </div>
 
@@ -1474,7 +1450,7 @@ export default function Home() {
         {bookingSuccessMessage && (
           <SuccessToast message={bookingSuccessMessage} />
         )}
-      </div>
+       </div>
     </ErrorBoundary>
   );
 }
