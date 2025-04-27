@@ -90,6 +90,20 @@ interface ErrorBoundaryProps {
     name?: string;
     role?: string;
   }
+  
+  interface RawSlotItem {
+    id: string | number | null | undefined; // Keep this type
+    lon?: number | string | null; // Add this line
+    lat?: number | string | null; // Add this line
+    type?: string | null;
+    name?: string | null;
+    address?: string | null;
+    city?: string | null;
+    subType?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    availableTimes?: string[]; 
+  }
 
 // --- Error Boundary Component ---
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -732,49 +746,83 @@ const BookingForm: React.FC<BookingFormProps> = ({ slotName, slotAddress, onBook
 function processSlotData(): { allSlots: SlotData[], validSlots: SlotData[] } {
     let fallbackCounter = 0;
   
-    const generateId = (item: Record<string, unknown>): string | number => {
-      return item.id !== undefined && item.id !== null ? item.id as string | number : `fallback-${fallbackCounter++}`;
+    // Use RawSlotItem for the item parameter
+    const generateId = (item: RawSlotItem): string | number => {
+      return item.id !== undefined && item.id !== null ? item.id : `fallback-${fallbackCounter++}`;
     };
   
-    const mapDataSource = (items: Record<string, unknown>[], typeFallback: string, defaultCity: string): SlotData[] => {
-      if (!Array.isArray(items)) {
-        console.error(`[ERROR] Input for ${typeFallback} is not an array.`);
+    // Use RawSlotItem[] for the items array
+    const mapDataSource = (items: RawSlotItem[], typeFallback: string, defaultCity: string): SlotData[] => {
+      if (!items) {
+        console.error(`[ERROR] No data for ${typeFallback}`);
         return [];
       }
   
-      return items.map((item) => ({
-        id: generateId(item),
-        lngLat: (typeof item.lon !== 'undefined' && item.lon !== null &&
-                 typeof item.lat !== 'undefined' && item.lat !== null &&
-                 !isNaN(Number(item.lon)) && !isNaN(Number(item.lat)))
-          ? [Number(item.lon), Number(item.lat)]
-          : [0, 0],
-        name: (item.name as string) || `Unbenannt (${typeFallback})`,
-        type: (item.type as string) || typeFallback,
-        city: (item.city as string) || defaultCity,
-        subType: (item.subType as string) || '',
-        address: (item.address as string) || 'Keine Adresse',
-        phone: (item.phone as string | null) || null,
-        website: (item.website as string | null) || null,
-      }));
+      if (!Array.isArray(items)) {
+        console.error(`[ERROR] Input for ${typeFallback} is not an array.`, typeof items);
+        return [];
+      }
+  
+      const mappedData = items.map((item) => {
+        const processedItem = {
+          id: generateId(item),
+          lngLat: (typeof item.lon !== 'undefined' && item.lon !== null &&
+                   typeof item.lat !== 'undefined' && item.lat !== null &&
+                   !isNaN(Number(item.lon)) && !isNaN(Number(item.lat)))
+            ? [Number(item.lon), Number(item.lat)] as [number, number]
+            : undefined,
+          name: item.name || `Unbenannt (${typeFallback})`,
+          type: item.type || typeFallback,
+          city: item.city || defaultCity,
+          subType: item.subType || '',
+          address: item.address || 'Keine Adresse',
+          phone: item.phone || null,
+          website: item.website || null,
+        };
+        
+        return processedItem;
+      });
+      
+      console.log(`[DEBUG] Mapped ${typeFallback}: ${mappedData.length} items`);
+      return mappedData;
     };
   
     try {
-      const sampledFriseure = mapDataSource(osmFriseure as Record<string, unknown>[], 'Friseur', 'Zürich');
-      const gesundheitSlots = mapDataSource(osmGesundheit as Record<string, unknown>[], 'Gesundheit', 'Zürich');
-      const gastroSlots = mapDataSource(osmGastro as Record<string, unknown>[], 'Gastro', 'Zürich');
+      console.log('[DEBUG] Starting data processing...');
+      
+      // Debug log der importierten Daten
+      console.log('[DEBUG] osmFriseure:', osmFriseure ? `${osmFriseure.length} items` : 'undefined');
+      console.log('[DEBUG] osmGesundheit:', osmGesundheit ? `${osmGesundheit.length} items` : 'undefined');
+      console.log('[DEBUG] osmGastro:', osmGastro ? `${osmGastro.length} items` : 'undefined');
+
+      const sampledFriseure = mapDataSource(osmFriseure || [], 'Friseur', 'Zürich');
+      const gesundheitSlots = mapDataSource(osmGesundheit || [], 'Gesundheit', 'Zürich');
+      const gastroSlots = mapDataSource(osmGastro || [], 'Gastro', 'Zürich');
+      
       const allSlots = [...sampledFriseure, ...gesundheitSlots, ...gastroSlots];
   
-      const validSlots = allSlots.filter(slot =>
-        slot.lngLat &&
-        Array.isArray(slot.lngLat) &&
-        slot.lngLat.length === 2 &&
-        typeof slot.lngLat[0] === 'number' &&
-        typeof slot.lngLat[1] === 'number' &&
-        (slot.lngLat[0] !== 0 || slot.lngLat[1] !== 0)
-      );
+      const validSlots = allSlots.filter(slot => {
+        const isValid = slot.lngLat &&
+          Array.isArray(slot.lngLat) &&
+          slot.lngLat.length === 2 &&
+          typeof slot.lngLat[0] === 'number' &&
+          typeof slot.lngLat[1] === 'number' &&
+          slot.lngLat[0] !== 0 && 
+          slot.lngLat[1] !== 0;
+        
+        if (!isValid && slot.name) {
+          console.log(`[DEBUG] Invalid slot filtered out: ${slot.name}`, slot.lngLat);
+        }
+        
+        return isValid;
+      });
   
       console.log(`[DEBUG] Total slots: ${allSlots.length}, Valid slots: ${validSlots.length}`);
+      
+      // Log ein paar Beispiele
+      if (validSlots.length > 0) {
+        console.log('[DEBUG] First valid slot:', validSlots[0]);
+      }
   
       return { allSlots, validSlots };
     } catch (error) {

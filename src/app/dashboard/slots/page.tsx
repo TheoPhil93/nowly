@@ -49,11 +49,10 @@ interface Analytics {
 }
 
 interface User {
-  id: string | number; // Add other properties your user object has
+  id: string | number;
   name: string;
   email?: string;
-  role: 'provider' | 'customer' | 'admin'; // Be specific about possible roles
-  // Add any other properties retrieved from localStorage/API
+  role: 'provider' | 'customer' | 'admin';
 }
 
 export default function ProviderDashboard() {
@@ -65,6 +64,7 @@ export default function ProviderDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'slots' | 'bookings' | 'analytics' | 'settings'>('dashboard');
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState<'today' | 'week' | 'month' | 'year'>('week');
   const router = useRouter();
 
@@ -76,30 +76,24 @@ export default function ProviderDashboard() {
     }
 
     try {
-      // When parsing, you can assert the type if confident,
-      // but it's safer to validate the structure.
       const userData: unknown = JSON.parse(storedUser);
 
-      // Basic type guard (you might want a more robust validation)
       if (typeof userData === 'object' && userData !== null && 'role' in userData && 'name' in userData) {
-         // Now TypeScript knows userData might be a User object based on the checks
         if ((userData as User).role !== 'provider') {
           router.push('/profil');
           return;
         }
-        // Set the state - TypeScript now knows userData fits the User shape
         setUser(userData as User);
         fetchProviderData();
       } else {
-          // Handle cases where localStorage data is invalid
-          console.error('Invalid user data structure in localStorage');
-          router.push('/login');
-          return; // Stop execution if data is invalid
+        console.error('Invalid user data structure in localStorage');
+        router.push('/login');
+        return;
       }
 
     } catch (e) {
       console.error('Error parsing user data:', e);
-      localStorage.removeItem('user'); // Clear invalid data
+      localStorage.removeItem('user');
       router.push('/login');
     } finally {
       setIsLoading(false);
@@ -115,13 +109,19 @@ export default function ProviderDashboard() {
           setShowUserMenu(false);
         }
       }
+      if (showMobileMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.mobile-menu-container')) {
+          setShowMobileMenu(false);
+        }
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showUserMenu]);
+  }, [showUserMenu, showMobileMenu]);
 
   const fetchProviderData = async () => {
     // Simulated provider data - replace with actual API calls
@@ -250,7 +250,7 @@ export default function ProviderDashboard() {
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return 'P'; // Default for provider if name somehow missing
+    if (!name) return 'P';
     return name
       .split(' ')
       .map(part => part[0])
@@ -272,7 +272,7 @@ export default function ProviderDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Header */}
+      {/* Enhanced Header with Mobile Menu */}
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
@@ -282,13 +282,28 @@ export default function ProviderDashboard() {
               </div>
               <div>
                 <span className="font-bold text-xl text-gray-900">Nowly</span>
-                <span className="ml-2 text-sm text-gray-500">Provider</span>
+                <span className="ml-2 text-sm text-gray-700 hidden sm:inline">Provider</span>
               </div>
             </Link>
 
-            <div className="flex items-center space-x-6">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {showMobileMenu ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-6">
               {/* Quick Actions */}
-              <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+              <button className="p-2 text-gray-400 hover:text-gray-800 relative">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -304,7 +319,7 @@ export default function ProviderDashboard() {
                   <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold">
                     {getInitials(user?.name)}
                   </div>
-                  <div className="hidden md:block text-left">
+                  <div className="hidden lg:block text-left">
                     <p className="text-sm font-medium text-gray-900">{user?.name || 'Provider'}</p>
                     <p className="text-xs text-gray-500">Provider Account</p>
                   </div>
@@ -315,7 +330,7 @@ export default function ProviderDashboard() {
 
                 {showUserMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50">
-                    <Link href="/profil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link href="/profil" className="block px-4 py-2 text-sm text-gray-900 hover:bg-gray-100">
                       Mein Profil
                     </Link>
                     <button
@@ -340,10 +355,97 @@ export default function ProviderDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {showMobileMenu && (
+          <div className="md:hidden border-t border-gray-200 bg-white mobile-menu-container">
+            <div className="pt-2 pb-3 space-y-1">
+              <button
+                onClick={() => {
+                  setActiveTab('dashboard');
+                  setShowMobileMenu(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-base font-medium ${
+                  activeTab === 'dashboard' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('slots');
+                  setShowMobileMenu(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-base font-medium ${
+                  activeTab === 'slots' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Meine Angebote
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('bookings');
+                  setShowMobileMenu(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-base font-medium ${
+                  activeTab === 'bookings' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Buchungen
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('analytics');
+                  setShowMobileMenu(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-base font-medium ${
+                  activeTab === 'analytics' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Analytics
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('settings');
+                  setShowMobileMenu(false);
+                }}
+                className={`block w-full text-left px-4 py-2 text-base font-medium ${
+                  activeTab === 'settings' ? 'text-blue-600 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Einstellungen
+              </button>
+            </div>
+            <div className="pt-4 pb-3 border-t border-gray-200">
+              <div className="flex items-center px-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 flex items-center justify-center text-white font-semibold">
+                    {getInitials(user?.name)}
+                  </div>
+                </div>
+                <div className="ml-3">
+                  <div className="text-base font-medium text-gray-800">{user?.name || 'Provider'}</div>
+                  <div className="text-sm font-medium text-gray-500">Provider Account</div>
+                </div>
+              </div>
+              <div className="mt-3 px-2 space-y-1">
+                <Link href="/profil" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                  Mein Profil
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-900 hover:bg-red-50"
+                >
+                  Abmelden
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b">
+      {/* Desktop Navigation Tabs */}
+      <div className="hidden md:block bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             <button
@@ -404,8 +506,8 @@ export default function ProviderDashboard() {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Quick Stats - Mobile Friendly Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center">
                   <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -467,13 +569,13 @@ export default function ProviderDashboard() {
               </div>
             </div>
 
-            {/* Today's Schedule & Recent Bookings */}
+            {/* Today's Schedule & Recent Bookings - Stacked on Mobile */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Today's Schedule */}
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
-                <div className="flex justify-between items-center mb-6">
+              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-6">
                   <h2 className="text-lg font-semibold">Heutiger Zeitplan</h2>
-                  <select className="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                  <select className="border border-gray-300 rounded-md px-3 py-1.5 text-sm w-full sm:w-auto">
                     <option>Alle Angebote</option>
                     {slots.map(slot => (
                       <option key={slot.id}>{slot.name}</option>
@@ -481,23 +583,23 @@ export default function ProviderDashboard() {
                   </select>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-x-auto">
                   {bookings
                     .filter(booking => booking.date === '2025-04-28')
                     .map((booking) => (
-                      <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                      <div key={booking.id} className="flex items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition min-w-full sm:min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
                           {booking.customerName.split(' ').map(n => n[0]).join('')}
                         </div>
-                        <div className="ml-4 flex-grow">
-                          <p className="font-medium text-gray-900">{booking.customerName}</p>
-                          <p className="text-sm text-gray-500">{booking.service}</p>
+                        <div className="ml-4 flex-grow min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{booking.customerName}</p>
+                          <p className="text-sm text-gray-500 truncate">{booking.service}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right ml-4">
                           <p className="font-medium text-gray-900">{booking.time} Uhr</p>
                           <p className="text-sm text-gray-500">{formatCurrency(booking.price)}</p>
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-4 hidden sm:block">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                             booking.status === 'confirmed'
                               ? 'bg-green-100 text-green-800'
@@ -512,7 +614,7 @@ export default function ProviderDashboard() {
               </div>
 
               {/* Recent Activity */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-6">Aktuelle Aktivitäten</h2>
                 <div className="space-y-4">
                   <div className="flex items-start">
@@ -554,17 +656,17 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Slots Tab */}
+        {/* Slots Tab - Mobile Friendly Grid */}
         {activeTab === 'slots' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold">Meine Angebote</h2>
                 <p className="text-gray-600 mt-1">Verwalten Sie Ihre Services und Verfügbarkeiten</p>
               </div>
               <button
                 onClick={() => setShowAddSlotModal(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+                className="mt-4 sm:mt-0 w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center justify-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
@@ -573,10 +675,10 @@ export default function ProviderDashboard() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {slots.map((slot) => (
                 <div key={slot.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition">
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">{slot.name}</h3>
@@ -598,7 +700,7 @@ export default function ProviderDashboard() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        {slot.address}
+                        <span className="truncate">{slot.address}</span>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -634,7 +736,7 @@ export default function ProviderDashboard() {
                     </div>
                   </div>
 
-                  <div className="px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
+                  <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
                     <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                       Bearbeiten
                     </button>
@@ -652,23 +754,23 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Bookings Tab */}
+        {/* Bookings Tab - Mobile Friendly Table */}
         {activeTab === 'bookings' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
               <div>
                 <h2 className="text-2xl font-bold">Buchungen</h2>
                 <p className="text-gray-600 mt-1">Verwalten Sie Ihre Termine und Kundenanfragen</p>
               </div>
-              <div className="flex space-x-4">
-                <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm">
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0 w-full sm:w-auto">
+                <select className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto">
                   <option>Alle Buchungen</option>
                   <option>Angefragt</option>
                   <option>Bestätigt</option>
                   <option>Abgeschlossen</option>
                   <option>Storniert</option>
                 </select>
-                <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition flex items-center text-sm">
+                <button className="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition flex items-center justify-center text-sm w-full sm:w-auto">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
@@ -677,7 +779,83 @@ export default function ProviderDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            {/* Mobile Cards for Bookings */}
+            <div className="block sm:hidden space-y-4">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="bg-white rounded-lg shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                        {booking.customerName.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div className="ml-3">
+                        <p className="font-medium text-gray-900">{booking.customerName}</p>
+                        <p className="text-sm text-gray-500">{booking.customerEmail}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      booking.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800'
+                        : booking.status === 'completed'
+                        ? 'bg-blue-100 text-blue-800'
+                        : booking.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {booking.status === 'confirmed' ? 'Bestätigt'
+                        : booking.status === 'completed' ? 'Abgeschlossen'
+                        : booking.status === 'cancelled' ? 'Storniert'
+                        : 'Angefragt'}
+                    </span>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Service:</span>
+                      <span className="font-medium">{booking.service}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Datum:</span>
+                      <span className="font-medium">{formatDate(booking.date)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Zeit:</span>
+                      <span className="font-medium">{booking.time} Uhr</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Preis:</span>
+                      <span className="font-medium">{formatCurrency(booking.price)}</span>
+                    </div>
+                  </div>
+                  {booking.status === 'pending' && (
+                    <div className="flex space-x-3 mt-4">
+                      <button
+                        onClick={() => updateBookingStatus(booking.id, 'confirmed')}
+                        className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                      >
+                        Bestätigen
+                      </button>
+                      <button
+                        onClick={() => updateBookingStatus(booking.id, 'cancelled')}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  )}
+                  {booking.status === 'confirmed' && (
+                    <button
+                      onClick={() => updateBookingStatus(booking.id, 'completed')}
+                      className="w-full mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+                    >
+                      Abschließen
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="hidden sm:block bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -784,33 +962,35 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Analytics Tab */}
+        {/* Analytics Tab - Mobile Friendly Layout */}
         {activeTab === 'analytics' && analytics && (
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
               <div>
                 <h2 className="text-2xl font-bold">Analytics</h2>
                 <p className="text-gray-600 mt-1">Detaillierte Einblicke in Ihre Performance</p>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                 <select
                   value={selectedTimeRange}
-                  onChange={(e) => setSelectedTimeRange(e.target.value as 'today' | 'week' | 'month' | 'year')}
-                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm"
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => 
+                    setSelectedTimeRange(e.target.value as 'today' | 'week' | 'month' | 'year')
+                  }
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm w-full sm:w-auto"
                 >
                   <option value="today">Heute</option>
                   <option value="week">Diese Woche</option>
                   <option value="month">Dieser Monat</option>
                   <option value="year">Dieses Jahr</option>
                 </select>
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm w-full sm:w-auto">
                   Bericht exportieren
                 </button>
               </div>
             </div>
 
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Key Metrics - Mobile Friendly Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-medium text-gray-500">Gesamtumsatz</h3>
@@ -856,27 +1036,27 @@ export default function ProviderDashboard() {
               </div>
             </div>
 
-            {/* Charts & Detailed Stats */}
+           {/* Charts & Detailed Stats - Mobile Friendly */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Revenue Chart */}
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-6">
+              <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-4 sm:p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Umsatzentwicklung</h3>
-                <div className="h-80 flex items-center justify-center bg-gray-50 rounded-lg">
+                <div className="h-64 sm:h-80 flex items-center justify-center bg-gray-50 rounded-lg">
                   {/* Here you would integrate a chart library */}
-                  <p className="text-gray-500">Umsatz-Chart wird hier angezeigt</p>
+                  <p className="text-gray-500 text-center px-4">Umsatz-Chart wird hier angezeigt</p>
                 </div>
               </div>
 
               {/* Top Services */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Top Services</h3>
                 <div className="space-y-4">
                   {analytics.topServices.map((service, index) => (
                     <div key={index} className="flex items-center">
-                      <div className="flex-grow">
+                      <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-center mb-1">
-                          <p className="text-sm font-medium text-gray-900">{service.name}</p>
-                          <p className="text-sm text-gray-500">{service.count} Buchungen</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{service.name}</p>
+                          <p className="text-sm text-gray-500 ml-2 flex-shrink-0">{service.count} Buchungen</p>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -890,301 +1070,301 @@ export default function ProviderDashboard() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Settings Tab */}
-        {activeTab === 'settings' && (
-          <div className="max-w-3xl">
-            <div className="bg-white rounded-lg shadow-sm">
-              {/* Business Information */}
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Geschäftsinformationen</h3>
-                <form className="space-y-6">
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Geschäftsname</label>
-                      <input
-                        type="text"
-                        defaultValue={slots[0]?.name || ''}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Geschäftstyp</label>
-                      <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        <option>Friseur</option>
-                        <option>Arzt</option>
-                        <option>Zahnarzt</option>
-                        <option>Therapeut</option>
-                        <option>Gastro</option>
-                      </select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">Adresse</label>
-                      <input
-                        type="text"
-                        defaultValue={slots[0]?.address || ''}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Telefon</label>
-                      <input
-                        type="tel"
-                        defaultValue={slots[0]?.phone || ''}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Website</label>
-                      <input
-                        type="url"
-                        defaultValue={slots[0]?.website || ''}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      />
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-              {/* Notification Settings */}
-              <div className="p-6 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Benachrichtigungen</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">E-Mail-Benachrichtigungen</p>
-                      <p className="text-sm text-gray-500">Erhalten Sie E-Mails für neue Buchungen</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">SMS-Benachrichtigungen</p>
-                      <p className="text-sm text-gray-500">SMS für dringende Updates</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Save Button */}
-              <div className="px-6 py-4 bg-gray-50 text-right">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                  Änderungen speichern
-                </button>
-              </div>
             </div>
-          </div>
-        )}
-      </main>
+            )}
 
-      {/* Add Slot Modal */}
-      {showAddSlotModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold">Neues Angebot erstellen</h3>
-                <button
-                  onClick={() => setShowAddSlotModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Name des Angebots
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="z.B. Haarschnitt Premium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Kategorie
-                    </label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                      <option value="">Bitte wählen</option>
-                      <option value="Friseur">Friseur</option>
-                      <option value="Arzt">Arzt</option>
-                      <option value="Zahnarzt">Zahnarzt</option>
-                      <option value="Therapeut">Therapeut</option>
-                      <option value="Gastro">Gastro</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Unterkategorie
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="z.B. Herrenhaarschnitt"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Preis (CHF)
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">CHF</span>
+            {/* Settings Tab - Mobile Friendly Form */}
+            {activeTab === 'settings' && (
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-white rounded-lg shadow-sm">
+                  {/* Business Information */}
+                  <div className="p-4 sm:p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Geschäftsinformationen</h3>
+                    <form className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Geschäftsname</label>
+                          <input
+                            type="text"
+                            defaultValue={slots[0]?.name || ''}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Geschäftstyp</label>
+                          <select className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <option>Friseur</option>
+                            <option>Arzt</option>
+                            <option>Zahnarzt</option>
+                            <option>Therapeut</option>
+                            <option>Gastro</option>
+                          </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700">Adresse</label>
+                          <input
+                            type="text"
+                            defaultValue={slots[0]?.address || ''}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Telefon</label>
+                          <input
+                            type="tel"
+                            defaultValue={slots[0]?.phone || ''}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Website</label>
+                          <input
+                            type="url"
+                            defaultValue={slots[0]?.website || ''}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                          />
+                        </div>
                       </div>
-                      <input
-                        type="number"
-                        className="w-full border border-gray-300 rounded-md pl-14 pr-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="0.00"
-                        step="0.01"
-                      />
+                    </form>
+                  </div>
+
+                  {/* Notification Settings */}
+                  <div className="p-4 sm:p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Benachrichtigungen</h3>
+                    <div className="space-y-4">
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">E-Mail-Benachrichtigungen</p>
+                          <p className="text-sm text-gray-500">Erhalten Sie E-Mails für neue Buchungen</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer mt-2 sm:mt-0">
+                          <input type="checkbox" className="sr-only peer" defaultChecked />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">SMS-Benachrichtigungen</p>
+                          <p className="text-sm text-gray-500">SMS für dringende Updates</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer mt-2 sm:mt-0">
+                          <input type="checkbox" className="sr-only peer" />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dauer (Minuten)
-                    </label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                      <option value="15">15 Minuten</option>
-                      <option value="30">30 Minuten</option>
-                      <option value="45">45 Minuten</option>
-                      <option value="60">1 Stunde</option>
-                      <option value="90">1.5 Stunden</option>
-                      <option value="120">2 Stunden</option>
-                    </select>
+                  {/* Save Button */}
+                  <div className="px-4 sm:px-6 py-4 bg-gray-50">
+                    <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                      Änderungen speichern
+                    </button>
                   </div>
                 </div>
+              </div>
+            )}
+            </main>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Beschreibung
-                  </label>
-                  <textarea
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    rows={4}
-                    placeholder="Beschreiben Sie Ihr Angebot..."
-                  ></textarea>
-                </div>
-
-                {/* Advanced Settings */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Erweiterte Einstellungen</h4>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="onlineBooking"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="onlineBooking" className="ml-2 block text-sm text-gray-900">
-                        Online-Buchung erlauben
-                      </label>
+            {/* Add Slot Modal - Mobile Friendly */}
+            {showAddSlotModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+                <div className="bg-white rounded-lg w-full max-w-2xl my-8">
+                  <div className="p-4 sm:p-6">
+                    <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-semibold">Neues Angebot erstellen</h3>
+                      <button
+                        onClick={() => setShowAddSlotModal(false)}
+                        className="text-gray-400 hover:text-gray-600 p-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
+                    <form className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Name des Angebots
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="z.B. Haarschnitt Premium"
+                        />
+                      </div>
 
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="instantConfirmation"
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                      <label htmlFor="instantConfirmation" className="ml-2 block text-sm text-gray-900">
-                        Sofortige Bestätigung
-                      </label>
-                    </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Kategorie
+                          </label>
+                          <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Bitte wählen</option>
+                            <option value="Friseur">Friseur</option>
+                            <option value="Arzt">Arzt</option>
+                            <option value="Zahnarzt">Zahnarzt</option>
+                            <option value="Therapeut">Therapeut</option>
+                            <option value="Gastro">Gastro</option>
+                          </select>
+                        </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Maximale Buchungen pro Tag
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Unbegrenzt"
-                        min="1"
-                      />
-                    </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Unterkategorie
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="z.B. Herrenhaarschnitt"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Preis (CHF)
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <span className="text-gray-500 text-sm">CHF</span>
+                            </div>
+                            <input
+                              type="number"
+                              className="w-full border border-gray-300 rounded-md pl-14 pr-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Dauer (Minuten)
+                          </label>
+                          <select className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="15">15 Minuten</option>
+                            <option value="30">30 Minuten</option>
+                            <option value="45">45 Minuten</option>
+                            <option value="60">1 Stunde</option>
+                            <option value="90">1.5 Stunden</option>
+                            <option value="120">2 Stunden</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Beschreibung
+                        </label>
+                        <textarea
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          rows={4}
+                          placeholder="Beschreiben Sie Ihr Angebot..."
+                        ></textarea>
+                      </div>
+
+                      {/* Advanced Settings */}
+                      <div className="border-t border-gray-200 pt-6">
+                        <h4 className="text-lg font-medium text-gray-900 mb-4">Erweiterte Einstellungen</h4>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="onlineBooking"
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="onlineBooking" className="ml-2 block text-sm text-gray-900">
+                              Online-Buchung erlauben
+                            </label>
+                          </div>
+
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="instantConfirmation"
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label htmlFor="instantConfirmation" className="ml-2 block text-sm text-gray-900">
+                              Sofortige Bestätigung
+                            </label>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Maximale Buchungen pro Tag
+                            </label>
+                            <input
+                              type="number"
+                              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Unbegrenzt"
+                              min="1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-200">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddSlotModal(false)}
+                          className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          type="submit"
+                          className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          Erstellen
+                        </button>
+                      </div>
+                    </form>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddSlotModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Abbrechen
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Erstellen
-                  </button>
+            {/* Footer - Mobile Optimized */}
+            <footer className="bg-white border-t mt-12">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                  <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-center sm:text-left">
+                    <span className="text-gray-900 font-semibold">Nowly Provider</span>
+                    <span className="hidden sm:inline text-gray-400">|</span>
+                    <p className="text-gray-500 text-sm">
+                      © {new Date().getFullYear()} Nowly. Alle Rechte vorbehalten.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center md:justify-end gap-4 sm:gap-6">
+                    <Link href="/help" className="text-gray-500 hover:text-gray-700 text-sm">
+                      Hilfe & Support
+                    </Link>
+                    <Link href="/docs" className="text-gray-500 hover:text-gray-700 text-sm">
+                      Dokumentation
+                    </Link>
+                    <Link href="/terms" className="text-gray-500 hover:text-gray-700 text-sm">
+                      AGB für Provider
+                    </Link>
+                    <Link href="/contact" className="text-gray-500 hover:text-gray-700 text-sm">
+                      Kontakt
+                    </Link>
+                  </div>
                 </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+              </div>
+            </footer>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-4 mb-4 md:mb-0">
-              <span className="text-gray-900 font-semibold">Nowly Provider</span>
-              <span className="text-gray-400">|</span>
-              <p className="text-gray-500 text-sm">
-                © {new Date().getFullYear()} Nowly. Alle Rechte vorbehalten.
-              </p>
+            {/* Success Message - floating notification */}
+            {false && (
+              <div className="fixed bottom-4 right-4 left-4 sm:left-auto bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-center sm:justify-start">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Erfolgreich gespeichert
+              </div>
+            )}
             </div>
-            <div className="flex space-x-6">
-              <Link href="/help" className="text-gray-500 hover:text-gray-700 text-sm">
-                Hilfe & Support
-              </Link>
-              <Link href="/docs" className="text-gray-500 hover:text-gray-700 text-sm">
-                Dokumentation
-              </Link>
-              <Link href="/terms" className="text-gray-500 hover:text-gray-700 text-sm">
-                AGB für Provider
-              </Link>
-              <Link href="/contact" className="text-gray-500 hover:text-gray-700 text-sm">
-                Kontakt
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Success Message - floating notification */}
-      {false && (
-        <div className="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          Erfolgreich gespeichert
-        </div>
-      )}
-    </div>
-  );
-}
+            );
+            }
