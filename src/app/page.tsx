@@ -891,6 +891,18 @@ function processSlotData(): { allSlots: SlotData[], validSlots: SlotData[] } {
       }
     }, []);
 
+    useEffect(() => {
+        // Da processSlotData synchron (im useMemo) ausgeführt wird,
+        // sind die validSlots direkt nach dem ersten Render verfügbar.
+        // Setze den Ladezustand zurück, sobald die Komponente geladen ist.
+        setIsLoading(false);
+   
+        // Optional: Wenn fetchBookings tatsächlich initiale Daten laden würde,
+        // könntest du es hier aufrufen und den isLoading State *in* fetchBookings verwalten lassen.
+        // fetchBookings();
+   
+     }, []);
+
   // --- UI Interaction Handlers ---
   const resetSelectionAndViews = useCallback(() => {
     setRightPanelView('list');
